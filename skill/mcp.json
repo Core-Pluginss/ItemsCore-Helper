@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "itemscore": {
-      "type": "http",
-      "url": "https://www.coredevelopment.shop/api/mcp"
+      "command": "npx",
+      "args": ["-y", "itemscore-helper", "serve"]
     }
   }
 }
