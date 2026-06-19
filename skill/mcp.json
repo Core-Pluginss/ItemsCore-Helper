@@ -2,7 +2,7 @@
   "mcpServers": {
     "itemscore": {
       "type": "http",
-      "url": "https://coredevelopment.shop/api/mcp"
+      "url": "https://www.coredevelopment.shop/api/mcp"
     }
   }
 }

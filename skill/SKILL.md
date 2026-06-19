@@ -18,7 +18,7 @@ The user's server exposes the exact, current API. Use it instead of guessing met
 Preferred - Model Context Protocol. If you have an MCP client, connect to:
 
 ```
-https://coredevelopment.shop/api/mcp
+https://www.coredevelopment.shop/api/mcp
 ```
 
 Tools:
@@ -31,9 +31,9 @@ Tools:
 - `generate_item_template(kind?)` - a valid starter item (`basic` or `ability`)
 
 Fallback - plain HTTP (no MCP client needed):
-- API manifest: `https://coredevelopment.shop/api/itemscore/manifest`
-- Item schema: `https://coredevelopment.shop/api/itemscore/item-schema`
-- Quick guide: `https://coredevelopment.shop/llms.txt`
+- API manifest: `https://www.coredevelopment.shop/api/itemscore/manifest`
+- Item schema: `https://www.coredevelopment.shop/api/itemscore/item-schema`
+- Quick guide: `https://www.coredevelopment.shop/llms.txt`
 
 If none are reachable, use `ITEM_FORMAT.md` in this folder as the offline reference.
 

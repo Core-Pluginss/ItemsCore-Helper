@@ -1,6 +1,6 @@
 # itemscore-helper
 
-Set up **any** AI assistant to build and edit custom Minecraft items for the [ItemsCore](https://coredevelopment.shop/plugins/items-core) plugin. Works with Claude, Codex, Cursor, Gemini, and anything else that supports MCP or custom instructions. You do not need to know how to code.
+Set up **any** AI assistant to build and edit custom Minecraft items for the [ItemsCore](https://www.coredevelopment.shop/plugins/items-core) plugin. Works with Claude, Codex, Cursor, Gemini, and anything else that supports MCP or custom instructions. You do not need to know how to code.
 
 ```bash
 npx itemscore-helper
@@ -16,7 +16,7 @@ That command drops the ItemsCore skill into a folder and prints exactly what to 
 The MCP endpoint is:
 
 ```
-https://coredevelopment.shop/api/mcp
+https://www.coredevelopment.shop/api/mcp
 ```
 
 ## Commands
@@ -31,21 +31,21 @@ https://coredevelopment.shop/api/mcp
 
 ## Connecting your AI (any provider)
 
-Pick your tool. The MCP URL is `https://coredevelopment.shop/api/mcp`.
+Pick your tool. The MCP URL is `https://www.coredevelopment.shop/api/mcp`.
 
 **Cursor** - `.cursor/mcp.json`
 ```json
-{ "mcpServers": { "itemscore": { "url": "https://coredevelopment.shop/api/mcp" } } }
+{ "mcpServers": { "itemscore": { "url": "https://www.coredevelopment.shop/api/mcp" } } }
 ```
 
 **Claude Code** - `.mcp.json` in your project
 ```json
-{ "mcpServers": { "itemscore": { "type": "http", "url": "https://coredevelopment.shop/api/mcp" } } }
+{ "mcpServers": { "itemscore": { "type": "http", "url": "https://www.coredevelopment.shop/api/mcp" } } }
 ```
 
 **Gemini CLI** - `~/.gemini/settings.json`
 ```json
-{ "mcpServers": { "itemscore": { "httpUrl": "https://coredevelopment.shop/api/mcp" } } }
+{ "mcpServers": { "itemscore": { "httpUrl": "https://www.coredevelopment.shop/api/mcp" } } }
 ```
 
 **Codex / Claude Desktop / any stdio-only client** - bridge the HTTP server with `mcp-remote`:
@@ -53,10 +53,10 @@ Pick your tool. The MCP URL is `https://coredevelopment.shop/api/mcp`.
 # ~/.codex/config.toml
 [mcp_servers.itemscore]
 command = "npx"
-args = ["-y", "mcp-remote", "https://coredevelopment.shop/api/mcp"]
+args = ["-y", "mcp-remote", "https://www.coredevelopment.shop/api/mcp"]
 ```
 
-**No MCP support?** Tell your AI to read `https://coredevelopment.shop/llms.txt` and use `https://coredevelopment.shop/api/itemscore/manifest` as the full API reference.
+**No MCP support?** Tell your AI to read `https://www.coredevelopment.shop/llms.txt` and use `https://www.coredevelopment.shop/api/itemscore/manifest` as the full API reference.
 
 After connecting, give your AI the `SKILL.md` file as its instructions (paste it into the chat, or add it to `.cursorrules` / `CLAUDE.md` / `AGENTS.md` / `GEMINI.md`).
 
@@ -71,8 +71,8 @@ To edit an existing item, run `/ic export <name>`, share the exported file with 
 
 ## Links
 
-- Documentation: https://coredevelopment.shop/docs/items-core
-- Plugin page: https://coredevelopment.shop/plugins/items-core
+- Documentation: https://www.coredevelopment.shop/docs/items-core
+- Plugin page: https://www.coredevelopment.shop/plugins/items-core
 
 ## License
 

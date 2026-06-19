@@ -4,10 +4,10 @@
 const fs = require("fs")
 const path = require("path")
 
-const MCP_URL = "https://coredevelopment.shop/api/mcp"
-const LLMS_URL = "https://coredevelopment.shop/llms.txt"
-const MANIFEST_URL = "https://coredevelopment.shop/api/itemscore/manifest"
-const DOCS_URL = "https://coredevelopment.shop/docs/items-core"
+const MCP_URL = "https://www.coredevelopment.shop/api/mcp"
+const LLMS_URL = "https://www.coredevelopment.shop/llms.txt"
+const MANIFEST_URL = "https://www.coredevelopment.shop/api/itemscore/manifest"
+const DOCS_URL = "https://www.coredevelopment.shop/docs/items-core"
 const SKILL_DIR = path.join(__dirname, "..", "skill")
 
 function copyDir(src, dest) {
