@@ -20,7 +20,7 @@ const SETUP_PROMPT = [
   "",
   "2. Read " + LLMS_URL + " so you know the ItemsCore item format and every method available.",
   "",
-  "3. Tell me you are ready, then ask what item I want. Build a valid .item file, validate it, and tell me to drop it in plugins/ItemsCore/imports/ and run /ic import in-game. The item stays fully editable in the in-game editor.",
+  "3. Tell me you are ready, then ask what item I want. Build a valid .import file (clean item JSON), validate it, and tell me to drop it in plugins/ItemsCore/imports/ and run /ic import in-game. The item stays fully editable in the in-game editor.",
 ].join("\n")
 
 function copyDir(src, dest) {

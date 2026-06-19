@@ -106,7 +106,7 @@ async function main() {
     {
       title: "Validate an ItemsCore item",
       description:
-        "Validate a clean item JSON object against the ItemsCore schema. Reports errors (must fix) and warnings (likely fine). Run this before giving the user a .item file.",
+        "Validate a clean item JSON object against the ItemsCore schema. Reports errors (must fix) and warnings (likely fine). Run this before giving the user a .import file.",
       inputSchema: { item: z.unknown().describe("The clean item JSON object to validate") },
     },
     async ({ item }) => jsonResult(M.validateItem(idx, item))

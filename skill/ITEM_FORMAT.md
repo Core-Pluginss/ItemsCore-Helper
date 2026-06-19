@@ -31,6 +31,7 @@ This is the offline reference for the item format ItemsCore imports. When the li
 |---|---|---|
 | `trigger` | string, required | One of the triggers below |
 | `needBlock` | `BOTH` \| `AIR` \| `BLOCK` | Optional per-action override of the item default |
+| `cooldown` | duration string | Optional per-player reuse delay. Any duration: a number plus a unit s/m/h, e.g. `"5s"`, `"45s"`, `"2m"`, `"90s"`, `"1h"` (a bare number means seconds) |
 | `steps` | Step[] | Run in order, combined by each step's `operatorToNext` |
 
 ### Triggers
@@ -130,6 +131,10 @@ These are not in the `core` / `particles` / `values` / `api` method list. For th
 - `api` - the public plugin API.
 
 Always confirm a method's exact name and parameters with `get_method` / `search_methods` before using it. Do not guess.
+
+## Projectiles
+
+`core.shootProjectile` and `core.createEquationVector` use a movement equation whose axes are relative to where the player looks: **X = forward, Y = up, Z = left**. A straight forward-flying projectile puts the motion on X, e.g. `core.createEquationVector("t * 0.4", "0", "0")`. Use Y for arc/gravity and Z to curve left/right.
 
 ## Worked example: a healing ability wand
 

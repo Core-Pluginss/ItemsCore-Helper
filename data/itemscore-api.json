@@ -352,7 +352,7 @@
           "returnsValue": true,
           "useless": false,
           "documented": true,
-          "description": "Builds a movement equation (using 't' for time) used to shape custom projectile paths.",
+          "description": "Builds a movement equation (using 't' for time in ticks) that shapes a custom projectile path. Axes are relative to the shooter's facing: X = forward (the way they look), Y = up, Z = left. A normal forward-flying projectile puts the motion on X, e.g. createEquationVector(\"t * 0.4\", \"0\", \"0\"); use Y for arc and Z to curve sideways.",
           "category": "Projectiles",
           "example": "core.createEquationVector(\"cos(t)\", \"0\", \"sin(t)\")"
         },
@@ -2509,7 +2509,7 @@
           "returnsValue": false,
           "useless": false,
           "documented": true,
-          "description": "Fires a custom ItemsCore projectile from a player, following the given path equation for a set number of ticks.",
+          "description": "Fires a custom ItemsCore projectile from a player, following the given path equation for a set number of ticks. The equation axes are relative to where the player looks: X is forward, Y is up, Z is left - so a straight forward shot puts the motion on X.",
           "category": "Projectiles",
           "example": "core.shootProjectile(player, player.getEyeLocation(), \"FIREBALL\", null, 60, true, core.createEquationVector(\"t\", \"0\", \"t\"))"
         },

@@ -16,7 +16,7 @@ You are my coding agent and I do not know how to code, so do the whole setup you
 
 2. Read https://www.coredevelopment.shop/llms.txt so you know the ItemsCore item format and every method available.
 
-3. Tell me you are ready, then ask what item I want. Build a valid .item file, validate it, and tell me to drop it in plugins/ItemsCore/imports/ and run /ic import in-game. The item stays fully editable in the in-game editor.
+3. Tell me you are ready, then ask what item I want. Build a valid .import file (clean item JSON), validate it, and tell me to drop it in plugins/ItemsCore/imports/ and run /ic import in-game. The item stays fully editable in the in-game editor.
 ```
 
 The same prompt is on the [docs page](https://www.coredevelopment.shop/docs/itemscore) with a one-click Copy button.
@@ -89,7 +89,7 @@ After connecting, give your AI the `SKILL.md` file as its instructions (paste it
 ## How you use it
 
 1. Ask your AI for an item.
-2. It writes a small `.item` (JSON) file and validates it.
+2. It writes a small `.import` (JSON) file and validates it.
 3. Put that file in `plugins/ItemsCore/imports/` on your server.
 4. Run `/ic import <name>` in-game. The item is live and stays editable in the in-game editor.
 

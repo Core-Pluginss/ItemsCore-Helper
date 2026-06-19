@@ -9,7 +9,7 @@ ItemsCore is a Minecraft (Bukkit/Spigot) plugin that lets a server owner create 
 
 ## The one rule that matters
 
-Always produce a **clean item JSON** (the format described below). Never hand-write the plugin's internal `.item` YAML or its generated JavaScript `code`. When the user imports your JSON, the plugin builds **both** the runnable code **and** the in-game GUI action graph from it. That means an item you create this way still works **and** stays fully editable in the in-game editor. Hand-writing raw code produces an item the GUI cannot open, which is exactly the problem this format avoids.
+Always produce a **clean item JSON** (the format described below). Never hand-write the plugin's internal item YAML or its generated JavaScript `code`. When the user imports your JSON, the plugin builds **both** the runnable code **and** the in-game GUI action graph from it. That means an item you create this way still works **and** stays fully editable in the in-game editor. Hand-writing raw code produces an item the GUI cannot open, which is exactly the problem this format avoids.
 
 ## Step 1: Get the API (do this first)
 
@@ -86,7 +86,7 @@ Run `validate_item` on your JSON. Fix every entry under `errors` before continui
 
 ## Step 4: Hand it to the user
 
-1. Save the JSON as `<name>.item` (or `<name>.json`).
+1. Save the JSON as `<name>.import` (or `<name>.json`).
 2. Tell the user to put the file in `plugins/ItemsCore/imports/` on their server.
 3. Tell them to run `/ic import <name>` in-game.
 
