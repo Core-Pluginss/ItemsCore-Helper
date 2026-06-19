@@ -1,0 +1,37 @@
+{
+  "name": "itemscore-helper",
+  "version": "1.0.0",
+  "description": "Set up any AI assistant (Claude, Codex, Cursor, Gemini, and others) to build and edit custom Minecraft items for the ItemsCore plugin. Installs the ItemsCore skill and connects the AI to the live ItemsCore API over MCP.",
+  "bin": {
+    "itemscore-helper": "bin/cli.js"
+  },
+  "files": [
+    "bin/",
+    "skill/",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "itemscore",
+    "minecraft",
+    "spigot",
+    "bukkit",
+    "mcp",
+    "ai",
+    "skill",
+    "claude",
+    "cursor",
+    "codex",
+    "gemini"
+  ],
+  "homepage": "https://coredevelopment.shop/docs/items-core",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Tc554/itemscore-helper.git"
+  },
+  "license": "MIT",
+  "author": "TastyCake",
+  "engines": {
+    "node": ">=16"
+  }
+}

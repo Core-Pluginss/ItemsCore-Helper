@@ -1,0 +1,19 @@
+{
+  "name": "storm_blade",
+  "fancyName": "&bStorm Blade",
+  "material": "DIAMOND_SWORD",
+  "needBlock": "BOTH",
+  "lore": ["&7Left-click: 25% chance to call lightning."],
+  "enchantments": [{ "name": "DAMAGE_ALL", "level": 4 }],
+  "talisman": false,
+  "actions": [
+    {
+      "trigger": "leftAction",
+      "needBlock": "BOTH",
+      "steps": [
+        { "call": "core.doIf", "args": [ { "call": "core.chanceOf", "args": [25] }, "core.summonLightningByLocation(player.getLocation())" ], "operatorToNext": "END" }
+      ]
+    }
+  ],
+  "events": []
+}

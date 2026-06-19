@@ -1,0 +1,23 @@
+{
+  "name": "healers_touch",
+  "fancyName": "&dHealer's Touch",
+  "material": "BLAZE_ROD",
+  "needBlock": "BOTH",
+  "lore": ["&7Right-click to channel healing energy."],
+  "enchantments": [{ "name": "LUCK", "level": 1 }],
+  "flags": ["HIDE_ENCHANTS"],
+  "talisman": false,
+  "actions": [
+    {
+      "trigger": "rightAction",
+      "needBlock": "BOTH",
+      "steps": [
+        { "call": "core.sendColorMessage", "args": [ { "var": "player" }, "&aYou channel healing energy!" ], "operatorToNext": "END" },
+        { "call": "core.heal", "args": [ { "var": "player" }, 6 ], "operatorToNext": "END" },
+        { "call": "core.giveEffect", "args": [ { "var": "player" }, "REGENERATION", 100, 1, false, true ], "operatorToNext": "END" },
+        { "call": "core.playSound", "args": [ { "var": "player" }, { "call": "player.getLocation", "args": [] }, { "call": "core.getSound", "args": ["ENTITY_PLAYER_LEVELUP"] }, 1, 1 ], "operatorToNext": "END" }
+      ]
+    }
+  ],
+  "events": []
+}
