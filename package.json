@@ -1,7 +1,7 @@
 {
   "name": "itemscore-helper",
-  "version": "1.0.0",
-  "description": "Local MCP server + skill that lets any AI (Claude, Codex, Cursor, Gemini, and others) build and edit custom Minecraft items for the ItemsCore plugin. Runs entirely on your machine.",
+  "version": "1.1.0",
+  "description": "One command sets up any AI (Claude, Codex, Cursor, Gemini, and others) to build and edit custom Minecraft items for the ItemsCore plugin. Auto-detects your AI tools and connects a local MCP server that runs entirely on your machine.",
   "bin": {
     "itemscore-helper": "bin/cli.js",
     "itemscore-mcp": "bin/mcp.js"
