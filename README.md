@@ -1,12 +1,24 @@
 # itemscore-helper
 
-Set up **any** AI assistant to build and edit custom Minecraft items for the [ItemsCore](https://www.coredevelopment.shop/plugins/items-core) plugin. Works with Claude, Codex, Cursor, Gemini, and anything else that supports MCP or custom instructions. You do not need to know how to code.
+Set up **any** AI assistant to build and edit custom Minecraft items for the [ItemsCore](https://www.coredevelopment.shop/plugins/itemscore) plugin. Works with Claude, Codex, Cursor, Gemini, and anything else that supports MCP or custom instructions. You do not need to know how to code.
+
+## Easiest: let your AI set itself up
+
+Run this, copy what it prints, and paste it into your AI (Claude, Cursor, Gemini, Codex, anything):
+
+```bash
+npx itemscore-helper prompt
+```
+
+Your AI reads the prompt, sets up the ItemsCore tools itself, then asks what item you want. No config files, no terminal knowledge needed.
+
+## Or set it up in one command
 
 ```bash
 npx itemscore-helper
 ```
 
-That command drops the ItemsCore skill into a folder and prints exactly what to paste into your AI tool. Then you can ask things like *"make me a sword that calls lightning on left-click"* and your AI produces a ready-to-import item file.
+This auto-detects the AI tools on your machine and connects the local MCP server to each one (a backup of every file it changes is saved beside it). Then just ask your AI for an item.
 
 ## What it sets up
 
@@ -19,8 +31,9 @@ The MCP server is `npx -y itemscore-helper serve`. It speaks the standard stdio 
 
 | Command | What it does |
 |---|---|
-| `npx itemscore-helper` | Install the skill files into `./itemscore-helper/` and print setup steps |
-| `npx itemscore-helper --dir DIR` | Install into a custom folder |
+| `npx itemscore-helper` | Auto-detect your AI tools and connect the local MCP server |
+| `npx itemscore-helper prompt` | Print a prompt to paste into your AI so it sets itself up |
+| `npx itemscore-helper --dry-run` | Show what would change, without writing anything |
 | `npx itemscore-helper serve` | Run the local MCP server (this is what your AI runs) |
 | `npx itemscore-helper print` | Print the skill instructions to stdout |
 | `npx itemscore-helper mcp` | Print the MCP server config |
@@ -76,8 +89,8 @@ To edit an existing item, run `/ic export <name>`, share the exported file with 
 
 ## Links
 
-- Documentation: https://www.coredevelopment.shop/docs/items-core
-- Plugin page: https://www.coredevelopment.shop/plugins/items-core
+- Documentation: https://www.coredevelopment.shop/docs/itemscore
+- Plugin page: https://www.coredevelopment.shop/plugins/itemscore
 
 ## License
 

@@ -10,6 +10,19 @@ const LLMS_URL = "https://www.coredevelopment.shop/llms.txt"
 const DOCS_URL = "https://www.coredevelopment.shop/docs/itemscore"
 const SKILL_DIR = path.join(__dirname, "..", "skill")
 
+const SETUP_PROMPT = [
+  "Help me build a custom item for my Minecraft server with the ItemsCore plugin. Set yourself up first, then we'll build it together.",
+  "",
+  "1. Fetch and read " + LLMS_URL + " - it explains how ItemsCore items work, the item JSON format, and every method you can use.",
+  "",
+  "2. Set up the ItemsCore tools so you can look up methods and validate items for me. In my project folder, run:",
+  "   npx -y itemscore-helper install",
+  '   Then reload your MCP servers (or restart this app) so the "itemscore" tools appear. If you cannot run commands, add this to your MCP config instead:',
+  '   {"mcpServers":{"itemscore":{"command":"npx","args":["-y","itemscore-helper","serve"]}}}',
+  "",
+  "3. Once you are set up, tell me you are ready and ask what item I want. Write a valid .item file, validate it, then tell me to drop it in plugins/ItemsCore/imports/ and run /ic import. The item stays fully editable in the in-game editor.",
+].join("\n")
+
 function copyDir(src, dest) {
   fs.mkdirSync(dest, { recursive: true })
   for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
@@ -39,12 +52,14 @@ function printHelp() {
     "",
     "Usage",
     "  npx itemscore-helper            Auto-detect your AI tools and connect the local MCP server",
+    "  npx itemscore-helper prompt     Print a prompt to paste into your AI so it sets itself up",
     "  npx itemscore-helper --dry-run  Show what would be changed, without writing anything",
     "  npx itemscore-helper serve      Run the local MCP server (this is what your AI runs)",
     "  npx itemscore-helper print      Print the skill instructions (SKILL.md) to stdout",
     "  npx itemscore-helper mcp        Print the MCP server config",
     "  npx itemscore-helper help       Show this help",
     "",
+    "Zero terminal? Run `npx itemscore-helper prompt`, copy it, and paste it into your AI - it sets itself up.",
     "Supports Claude (Code & Desktop), Cursor, Gemini CLI, Codex, Windsurf and any MCP client.",
     "Docs: " + DOCS_URL,
     "",
@@ -59,6 +74,10 @@ function printMcp() {
 
 function printSkill() {
   process.stdout.write(fs.readFileSync(path.join(SKILL_DIR, "SKILL.md"), "utf8"))
+}
+
+function printPrompt() {
+  console.log(SETUP_PROMPT)
 }
 
 function manualLines() {
@@ -94,7 +113,13 @@ function runInstall(dryRun) {
       out.push("A backup of each changed file was saved beside it (*.itemscore-bak).")
     }
   } else {
-    out.push("No supported AI tools were detected. Set it up manually:")
+    out.push("No AI tool configs were detected on this machine. Two easy options:")
+    out.push("")
+    out.push("  1. Paste this prompt into your AI and it sets itself up:")
+    out.push("")
+    out.push(SETUP_PROMPT.split("\n").map((l) => "     " + l).join("\n"))
+    out.push("")
+    out.push("  2. Or add the MCP server to your AI client's config yourself:")
     out.push(...manualLines())
   }
 
@@ -114,6 +139,7 @@ function main() {
   }
   if (args.cmd === "help") return printHelp()
   if (args.cmd === "mcp") return printMcp()
+  if (args.cmd === "prompt") return printPrompt()
   if (args.cmd === "print") return printSkill()
   if (args.cmd !== "install") {
     console.error("Unknown command: " + args.cmd + "\nRun: npx itemscore-helper help")
