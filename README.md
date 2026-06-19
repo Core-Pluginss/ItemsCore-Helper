@@ -2,15 +2,24 @@
 
 Set up **any** AI assistant to build and edit custom Minecraft items for the [ItemsCore](https://www.coredevelopment.shop/plugins/itemscore) plugin. Works with Claude, Codex, Cursor, Gemini, and anything else that supports MCP or custom instructions. You do not need to know how to code.
 
-## Easiest: let your AI set itself up
+## Easiest: paste one prompt into your AI
 
-Run this, copy what it prints, and paste it into your AI (Claude, Cursor, Gemini, Codex, anything):
+Copy the prompt below and paste it into your AI (Claude, Cursor, Gemini, Codex, anything). It downloads and connects the ItemsCore tools itself, then asks what item you want - no terminal knowledge needed:
 
-```bash
-npx itemscore-helper prompt
+```text
+You are my coding agent and I do not know how to code, so do the whole setup yourself - actually run the commands, do not just tell me what to run.
+
+1. In my project folder, run this to download and connect the ItemsCore tools:
+   npx -y itemscore-helper install
+   It installs a local helper and wires an "itemscore" MCP server into this project. When it finishes, reload your MCP servers (or ask me to restart this app) so the itemscore tools load. If you truly cannot run commands, add this to your MCP config instead:
+   {"mcpServers":{"itemscore":{"command":"npx","args":["-y","itemscore-helper","serve"]}}}
+
+2. Read https://www.coredevelopment.shop/llms.txt so you know the ItemsCore item format and every method available.
+
+3. Tell me you are ready, then ask what item I want. Build a valid .item file, validate it, and tell me to drop it in plugins/ItemsCore/imports/ and run /ic import in-game. The item stays fully editable in the in-game editor.
 ```
 
-Your AI reads the prompt, sets up the ItemsCore tools itself, then asks what item you want. No config files, no terminal knowledge needed.
+The same prompt is on the [docs page](https://www.coredevelopment.shop/docs/itemscore) with a one-click Copy button.
 
 ## Or set it up in one command
 
@@ -32,7 +41,6 @@ The MCP server is `npx -y itemscore-helper serve`. It speaks the standard stdio 
 | Command | What it does |
 |---|---|
 | `npx itemscore-helper` | Auto-detect your AI tools and connect the local MCP server |
-| `npx itemscore-helper prompt` | Print a prompt to paste into your AI so it sets itself up |
 | `npx itemscore-helper --dry-run` | Show what would change, without writing anything |
 | `npx itemscore-helper serve` | Run the local MCP server (this is what your AI runs) |
 | `npx itemscore-helper print` | Print the skill instructions to stdout |
