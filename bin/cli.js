@@ -4,9 +4,8 @@
 const fs = require("fs")
 const path = require("path")
 
-const MCP_URL = "https://www.coredevelopment.shop/api/mcp"
+const HOSTED_URL = "https://www.coredevelopment.shop/api/mcp"
 const LLMS_URL = "https://www.coredevelopment.shop/llms.txt"
-const MANIFEST_URL = "https://www.coredevelopment.shop/api/itemscore/manifest"
 const DOCS_URL = "https://www.coredevelopment.shop/docs/items-core"
 const SKILL_DIR = path.join(__dirname, "..", "skill")
 
@@ -42,11 +41,13 @@ function printHelp() {
     "  npx itemscore-helper            Install the skill files here and print setup steps",
     "  npx itemscore-helper install    Same as above",
     "  npx itemscore-helper --dir DIR  Install into a custom folder (default: itemscore-helper)",
+    "  npx itemscore-helper serve      Run the local MCP server (this is what your AI runs)",
     "  npx itemscore-helper print      Print the skill instructions (SKILL.md) to stdout",
     "  npx itemscore-helper mcp        Print the MCP server config",
     "  npx itemscore-helper help       Show this help",
     "",
-    "Works with Claude, Codex, Cursor, Gemini, and any other AI that supports MCP or custom instructions.",
+    "The MCP server runs locally on your machine over stdio. Works with Claude, Codex, Cursor,",
+    "Gemini, and any other AI that supports MCP.",
     "Docs: " + DOCS_URL,
     "",
   ].join("\n"))
@@ -54,7 +55,11 @@ function printHelp() {
 
 function printMcp() {
   console.log(
-    JSON.stringify({ mcpServers: { itemscore: { type: "http", url: MCP_URL } } }, null, 2)
+    JSON.stringify(
+      { mcpServers: { itemscore: { command: "npx", args: ["-y", "itemscore-helper", "serve"] } } },
+      null,
+      2
+    )
   )
 }
 
@@ -76,28 +81,31 @@ function printGuide(targetDir) {
     "",
     "Two things to set up in your AI:",
     "",
-    "1) Connect the live ItemsCore API (MCP) - recommended",
-    "   Endpoint (Streamable HTTP):  " + MCP_URL,
+    "1) Add the local ItemsCore MCP server (runs on your machine over stdio)",
+    "   Same config for every client - command npx, args [-y, itemscore-helper, serve]:",
     "",
     "   Cursor        .cursor/mcp.json",
-    '     {"mcpServers":{"itemscore":{"url":"' + MCP_URL + '"}}}',
+    '     {"mcpServers":{"itemscore":{"command":"npx","args":["-y","itemscore-helper","serve"]}}}',
     "",
-    "   Claude Code   .mcp.json in your project",
-    '     {"mcpServers":{"itemscore":{"type":"http","url":"' + MCP_URL + '"}}}',
+    "   Claude Code   .mcp.json in your project (or claude_desktop_config.json for Desktop)",
+    '     {"mcpServers":{"itemscore":{"command":"npx","args":["-y","itemscore-helper","serve"]}}}',
     "",
     "   Gemini CLI    ~/.gemini/settings.json",
-    '     {"mcpServers":{"itemscore":{"httpUrl":"' + MCP_URL + '"}}}',
+    '     {"mcpServers":{"itemscore":{"command":"npx","args":["-y","itemscore-helper","serve"]}}}',
     "",
-    "   Codex, Claude Desktop, or any stdio-only client",
-    "     Use the bridge command (no native HTTP needed):",
-    "       npx mcp-remote " + MCP_URL,
-    "     Codex  ~/.codex/config.toml:",
-    "       [mcp_servers.itemscore]",
-    '       command = "npx"',
-    '       args = ["-y","mcp-remote","' + MCP_URL + '"]',
+    "   Codex         ~/.codex/config.toml",
+    "     [mcp_servers.itemscore]",
+    '     command = "npx"',
+    '     args = ["-y","itemscore-helper","serve"]',
     "",
-    "   No MCP at all? Tell your AI to read " + LLMS_URL,
-    "     and use " + MANIFEST_URL + " as the full API reference.",
+    "   To match YOUR server's exact API (including addon methods), run /ic exportapi in-game",
+    "   and point the server at the generated file, either with the env var:",
+    "     ITEMSCORE_API=/path/to/plugins/ItemsCore/itemscore-api.json",
+    '   or by adding "--manifest","/path/to/itemscore-api.json" to the args. Otherwise it uses',
+    "   a bundled snapshot of the standard API.",
+    "",
+    "   No MCP support at all? An online copy also exists at " + HOSTED_URL,
+    "   and a plain-text guide at " + LLMS_URL,
     "",
     "2) Give your AI the skill",
     "   Load " + skillPath + " as the AI's instructions / rules:",
@@ -115,6 +123,10 @@ function printGuide(targetDir) {
 
 function main() {
   const args = parseArgs(process.argv.slice(2))
+  if (args.cmd === "serve") {
+    require("./mcp.js")
+    return
+  }
   if (args.cmd === "help") return printHelp()
   if (args.cmd === "mcp") return printMcp()
   if (args.cmd === "print") return printSkill()

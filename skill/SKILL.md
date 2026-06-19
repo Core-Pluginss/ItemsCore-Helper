@@ -11,17 +11,11 @@ ItemsCore is a Minecraft (Bukkit/Spigot) plugin that lets a server owner create 
 
 Always produce a **clean item JSON** (the format described below). Never hand-write the plugin's internal `.item` YAML or its generated JavaScript `code`. When the user imports your JSON, the plugin builds **both** the runnable code **and** the in-game GUI action graph from it. That means an item you create this way still works **and** stays fully editable in the in-game editor. Hand-writing raw code produces an item the GUI cannot open, which is exactly the problem this format avoids.
 
-## Step 1: Get the live API (do this first)
+## Step 1: Get the API (do this first)
 
-The user's server exposes the exact, current API. Use it instead of guessing method names.
+Use the real API instead of guessing method names.
 
-Preferred - Model Context Protocol. If you have an MCP client, connect to:
-
-```
-https://www.coredevelopment.shop/api/mcp
-```
-
-Tools:
+Preferred - the `itemscore` MCP server. It runs locally on the user's machine (installed with `npx itemscore-helper`) and exposes these tools. If it is connected, call them:
 - `search_methods(query, binding?, includeUseless?)` - find scripting methods by name, category, or description
 - `get_method(name, binding?)` - full signature, params, return, and example for one method (accepts `core.teleport` or `teleport`)
 - `list_triggers()` - every trigger an item can react to, and the variables available in each
@@ -30,12 +24,13 @@ Tools:
 - `validate_item(item)` - checks an item JSON and returns errors and warnings
 - `generate_item_template(kind?)` - a valid starter item (`basic` or `ability`)
 
-Fallback - plain HTTP (no MCP client needed):
+Fallback - if no MCP is connected, a hosted copy is available over plain HTTP:
+- MCP endpoint: `https://www.coredevelopment.shop/api/mcp`
 - API manifest: `https://www.coredevelopment.shop/api/itemscore/manifest`
 - Item schema: `https://www.coredevelopment.shop/api/itemscore/item-schema`
 - Quick guide: `https://www.coredevelopment.shop/llms.txt`
 
-If none are reachable, use `ITEM_FORMAT.md` in this folder as the offline reference.
+If nothing is reachable, use `ITEM_FORMAT.md` in this folder as the offline reference.
 
 ## Step 2: Build the item JSON
 
