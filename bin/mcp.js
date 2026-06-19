@@ -24,7 +24,7 @@ async function main() {
     { name: "itemscore", version: String(idx.manifest.pluginVersion || "1") },
     {
       instructions:
-        "ItemsCore is a Minecraft (Bukkit/Spigot) plugin that lets server owners build custom RPG items with no Java. Use these tools to look up the scripting API, then author a clean item JSON (get_item_schema / generate_item_template), validate it (validate_item), and tell the user to drop it in plugins/ItemsCore/imports/ and run /ic import <file>. Items authored this way stay editable in the in-game GUI." +
+        "ItemsCore is a Minecraft (Bukkit/Spigot) plugin that lets server owners build custom RPG items with no Java. Use these tools to look up the scripting API, then author a clean item JSON (get_item_schema / generate_item_template) and validate it (validate_item). IMPORTANT: save the file with a .import extension, for example flame_sword.import - never .item (.item is the plugin's own saved-item format, the user must not author that). Tell the user to drop the .import file in plugins/ItemsCore/imports/ and run /ic import <name>. To change an item that is already imported, build the updated JSON with the SAME name and import it again - it overwrites the existing item and keeps its stats and recipe (run /ic export <name> first to get the current JSON if you do not have it). Items authored this way stay editable in the in-game GUI." +
         (idx.isBundled
           ? " (Using the bundled API snapshot. To match this server's exact API including addon methods, run /ic exportapi and point this server at the generated plugins/ItemsCore/itemscore-api.json via --manifest or the ITEMSCORE_API env var.)"
           : " (Using the live API manifest at " + idx.source + ".)"),
@@ -106,7 +106,7 @@ async function main() {
     {
       title: "Validate an ItemsCore item",
       description:
-        "Validate a clean item JSON object against the ItemsCore schema. Reports errors (must fix) and warnings (likely fine). Run this before giving the user a .import file.",
+        "Validate a clean item JSON object against the ItemsCore schema (unknown methods, wrong argument count, wrong argument order/type). Reports errors (must fix) and warnings (likely fine). Run this before saving. Save the result as a .import file (for example flame_sword.import), never .item.",
       inputSchema: { item: z.unknown().describe("The clean item JSON object to validate") },
     },
     async ({ item }) => jsonResult(M.validateItem(idx, item))

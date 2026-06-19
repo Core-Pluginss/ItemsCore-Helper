@@ -20,7 +20,7 @@ const SETUP_PROMPT = [
   "",
   "2. Read " + LLMS_URL + " so you know the ItemsCore item format and every method available.",
   "",
-  "3. Tell me you are ready, then ask what item I want. Build a valid .import file (clean item JSON), validate it, and tell me to drop it in plugins/ItemsCore/imports/ and run /ic import in-game. The item stays fully editable in the in-game editor.",
+  "3. Tell me you are ready, then ask what item I want. Build the clean item JSON, validate it with the validate_item tool, and save it as a file ending in .import (for example flame_sword.import) - never .item. Tell me to drop it in plugins/ItemsCore/imports/ and run /ic import in-game. To change an item I already imported, edit the JSON and import it again with the same name (it overwrites the existing item). The item stays fully editable in the in-game editor.",
 ].join("\n")
 
 function copyDir(src, dest) {

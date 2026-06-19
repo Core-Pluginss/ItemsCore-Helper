@@ -86,17 +86,18 @@ Run `validate_item` on your JSON. Fix every entry under `errors` before continui
 
 ## Step 4: Hand it to the user
 
-1. Save the JSON as `<name>.import` (or `<name>.json`).
+1. Save the JSON with a `.import` extension, for example `flame_sword.import`. **Always use `.import`, never `.item`.** `.item` is the plugin's own internal saved-item format - if you name the file `.item` the user will be confused and the import flow will not pick it up correctly. (The file is plain JSON; the `.import` extension just marks that it belongs in the imports folder.)
 2. Tell the user to put the file in `plugins/ItemsCore/imports/` on their server.
 3. Tell them to run `/ic import <name>` in-game.
 
 On success the plugin replies: `Imported <name> (N action(s)). It is now live and GUI-editable.` The item is immediately usable and can be opened in the editor with `/itemeditor <name>`.
 
-## Editing an existing item
+## Editing an item that is already imported
 
-1. User runs `/ic export <name>` in-game. The plugin writes `plugins/ItemsCore/exports/<name>.json`.
-2. User shares that file with you. Edit the clean JSON.
-3. Validate, then re-import the same way. Importing by the same `name` updates the item and preserves its stats, recipe, and attributes.
+Items are identified by their `name`. **To change an item that already exists, do not start over - update it in place:**
+
+- **Behavior / actions (abilities, particles, projectiles, stats):** build the updated clean JSON with the **same `name`** and import it again exactly like a new item (save as `<name>.import`, `/ic import <name>`). Importing over an existing name **overwrites** the item and keeps its stats, recipe, and attributes. If you do not already have the item's JSON, have the user run `/ic export <name>` first - the plugin writes `plugins/ItemsCore/exports/<name>.json`, which you edit and re-import. Do **not** hand-edit the stored `plugins/ItemsCore/items/<name>.item` file for behavior changes: its `code` and `actions` are machine-encoded (strings as char codes, shared YAML anchors) and editing them by hand will corrupt the item.
+- **Cosmetic only (display name, lore, material, custom model data, skull owner):** these top fields *are* plain text in the stored item file. You may edit `plugins/ItemsCore/items/<name>.item` directly and tell the user to run `/ic reload <name>` to apply it. For anything touching `code` or `actions`, use the re-import flow above instead.
 
 If the item is a **legacy code-only item** (made before this format, so the editor cannot open it), have the user run `/ic adopt <name>` first. That converts its code into GUI actions; then export, edit, and re-import as above.
 
