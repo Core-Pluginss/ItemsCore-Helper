@@ -18,8 +18,9 @@ This is the offline reference for the item format ItemsCore imports. When the li
 | `customModelData` | number | Resource-pack model id |
 | `skullOwner` | string | Player name, for `PLAYER_HEAD` skins |
 | `stats` | object[] | Stat modifiers (authored in the editor; preserved on re-import) |
-| `actions` | Action[] | The behavior graph (see below) |
-| `events` | object[] | Custom event definitions |
+| `actions` | Action[] | The built-in trigger behavior graph (see below) |
+| `customEvents` | object[] | React to ANY Bukkit event by its full class name (see Custom events) |
+| `recipe` | object[] | Optional shaped crafting recipe, up to 9 slots row-major (3x3). `null` for empty slots. Each slot is `{ "material": "DIAMOND", "amount": 1 }` (vanilla) or `{ "item": "custom_item_name", "amount": 1 }` (another custom item). `amount` defaults to 1 and is how many are consumed from that slot, so `amount > 1` is supported. Example: `[{"material":"DIAMOND"},null,null,{"material":"DIAMOND"},null,null,{"material":"STICK"},null,null]` |
 
 ## Action
 
@@ -32,6 +33,7 @@ This is the offline reference for the item format ItemsCore imports. When the li
 | `trigger` | string, required | One of the triggers below |
 | `needBlock` | `BOTH` \| `AIR` \| `BLOCK` | Optional per-action override of the item default |
 | `cooldown` | duration string | Optional per-player reuse delay. Any duration: a number plus a unit s/m/h, e.g. `"5s"`, `"45s"`, `"2m"`, `"90s"`, `"1h"` (a bare number means seconds) |
+| `cooldownMessage` | string | Optional message sent when the player triggers this action while on cooldown. Supports `&` colors and placeholders `%remaining_seconds%`, `%remaining_minutes%`, `%remaining_hours%` (whole time left in that unit, rounded up), `%remaining%` (formatted like `1m 30s`), `%remaining_millis%`. Needs `cooldown` set to do anything |
 | `steps` | Step[] | Run in order, combined by each step's `operatorToNext` |
 
 ### Triggers
@@ -112,6 +114,30 @@ For most items, every step uses `END`. Operators other than `END` build a single
 | `landLocation` | arrowLandAction |
 | `lastLocation` | projectile hit events |
 
+## Custom events
+
+`actions` only cover the built-in triggers above. To react to ANY other Bukkit event, add a `customEvents` entry with the event's full class name. The plugin checks the class exists on import and blocks the import if it does not.
+
+```json
+"customEvents": [
+  {
+    "event": "org.bukkit.event.block.BlockBreakEvent",
+    "steps": [
+      { "call": "core.sendColorMessage", "args": [ { "var": "player" }, "&aYou broke a block while holding this!" ], "operatorToNext": "END" }
+    ]
+  }
+]
+```
+
+| Field | Type | Notes |
+|---|---|---|
+| `event` | string, required | The FULL Bukkit event class, e.g. `org.bukkit.event.block.BlockBreakEvent`, `org.bukkit.event.entity.EntityDeathEvent`, `org.bukkit.event.player.PlayerInteractEvent` |
+| `cooldown` | duration string | Optional, same format as an action cooldown |
+| `cooldownMessage` | string | Optional, same as an action `cooldownMessage` (sent when the cooldown blocks the handler) |
+| `steps` | Step[] | Same step format as an action (below) |
+
+Variables in a custom event step: `player` (the player the plugin finds on the event), `item`, `event` (the fired event itself - read its data with calls like `{ "call": "event.getBlock", "args": [] }`), plus `core` / `particles` / `values` / `api`. A custom event only fires while the player has the item (held, worn, or anywhere in the inventory for talismans). Use the exact class name; do not guess the package.
+
 ## Bukkit objects expose their full Spigot API
 
 `player`, `shooter`, `victim`, `arrow`, `event`, and any entity, block, world, location, or `ItemStack` returned by a method are real Bukkit/Spigot objects. You can call any standard Spigot method on them in a step, not only the ItemsCore methods:
@@ -160,7 +186,7 @@ Always confirm a method's exact name and parameters with `get_method` / `search_
       ]
     }
   ],
-  "events": []
+  "customEvents": []
 }
 ```
 
@@ -184,7 +210,7 @@ Always confirm a method's exact name and parameters with `get_method` / `search_
       ]
     }
   ],
-  "events": []
+  "customEvents": []
 }
 ```
 

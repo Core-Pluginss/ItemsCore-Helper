@@ -53,7 +53,7 @@ Minimal shape:
       ]
     }
   ],
-  "events": []
+  "customEvents": []
 }
 ```
 
@@ -64,6 +64,7 @@ Rules:
 - Each step has a `call`, an `args` array, and `operatorToNext`. `call` is `core.method`, `particles.method`, a Bukkit call like `player.getLocation`, or a bare variable name to read it.
 - An arg is a JSON literal, `{ "var": "player" }` to pass a variable, or a nested `{ "call": ..., "args": ... }` to pass one method's result into another.
 - `operatorToNext` joins a step to the next one. Use `END` to end a statement. Other values (`ADD`, `EQUALS`, `AND`, ...) build expressions and conditions. See `ITEM_FORMAT.md`.
+- `actions` only cover the built-in triggers. To react to any OTHER Bukkit event, add a `customEvents` entry with the event's full class name (e.g. `org.bukkit.event.block.BlockBreakEvent`) and the same `steps` format - variables are `player`, `item`, `event`. The import is blocked if the class name is not found on the server, so use the exact fully-qualified name.
 
 Find the exact method you need with `search_methods` / `get_method` before using it. Do not invent method names.
 
