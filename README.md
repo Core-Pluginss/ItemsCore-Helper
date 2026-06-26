@@ -14,9 +14,11 @@ You are my coding agent and I do not know how to code, so do the whole setup you
    It installs a local helper and wires an "itemscore" MCP server into this project. When it finishes, reload your MCP servers (or ask me to restart this app) so the itemscore tools load. If you truly cannot run commands, add this to your MCP config instead:
    {"mcpServers":{"itemscore":{"command":"npx","args":["-y","itemscore-helper","serve"]}}}
 
-2. Read https://www.coredevelopment.shop/llms.txt so you know the ItemsCore item format and every method available.
+2. Read https://www.coredevelopment.shop/llms.txt so you know the ItemsCore item format, how stats work, the in-game commands, and every method available.
 
-3. Tell me you are ready, then ask what item I want. Build a valid .import file (clean item JSON), validate it, and tell me to drop it in plugins/ItemsCore/imports/ and run /ic import in-game. The item stays fully editable in the in-game editor.
+3. Find my ItemsCore plugin folder (plugins/ItemsCore/ - it has items/, stats/ and config.yml). If you cannot find it, ask me for its full path before writing anything.
+
+4. Tell me you are ready, then ask what I want to build. You can make and edit items, create and edit stats, and tell me the right commands. For an item: build a valid .import file (clean item JSON), validate it, and tell me to drop it in plugins/ItemsCore/imports/ and run /ic import in-game. For a stat: edit plugins/ItemsCore/stats/stats.yml and tell me to run /ic reload stats. Items stay fully editable in the in-game editor.
 ```
 
 The same prompt is on the [docs page](https://www.coredevelopment.shop/docs/itemscore) with a one-click Copy button.

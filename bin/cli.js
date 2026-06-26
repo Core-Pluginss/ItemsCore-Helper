@@ -18,9 +18,11 @@ const SETUP_PROMPT = [
   '   It installs a local helper and wires an "itemscore" MCP server into this project. When it finishes, reload your MCP servers (or ask me to restart this app) so the itemscore tools load. If you truly cannot run commands, add this to your MCP config instead:',
   '   {"mcpServers":{"itemscore":{"command":"npx","args":["-y","itemscore-helper","serve"]}}}',
   "",
-  "2. Read " + LLMS_URL + " so you know the ItemsCore item format and every method available.",
+  "2. Read " + LLMS_URL + " so you know the ItemsCore item format, how stats work, the in-game commands, and every method available.",
   "",
-  "3. Tell me you are ready, then ask what item I want. Build the clean item JSON, validate it with the validate_item tool, and save it as a file ending in .import (for example flame_sword.import) - never .item. Tell me to drop it in plugins/ItemsCore/imports/ and run /ic import in-game. To change an item I already imported, edit the JSON and import it again with the same name (it overwrites the existing item). The item stays fully editable in the in-game editor.",
+  "3. Find my ItemsCore plugin folder (plugins/ItemsCore/ - it has items/, stats/ and config.yml). If you cannot find it, ask me for its full path before writing anything.",
+  "",
+  "4. Tell me you are ready, then ask what I want to build. You can make and edit items, create and edit stats, and tell me the right commands. For an item: build the clean item JSON, validate it with validate_item, and save it as a file ending in .import (for example flame_sword.import) - never .item. Tell me to drop it in plugins/ItemsCore/imports/ and run /ic import in-game. To change an item I already imported, edit the JSON and import it again with the same name (it overwrites). For a stat: read get_stat_schema, edit plugins/ItemsCore/stats/stats.yml, then tell me to run /ic reload stats. Items stay fully editable in the in-game editor.",
 ].join("\n")
 
 function copyDir(src, dest) {

@@ -15,12 +15,43 @@ This is the offline reference for the item format ItemsCore imports. When the li
 | `enchantments` | `{ name, level }[]` | e.g. `{ "name": "DAMAGE_ALL", "level": 3 }` |
 | `flags` | string[] | Bukkit ItemFlag names (e.g. `HIDE_ATTRIBUTES`) |
 | `talisman` | boolean | If true, the item works from anywhere in the inventory |
+| `stackable` | boolean | If true, the item drops its unique per-item id so identical copies stack together. Use it for consumables and currency like vouchers, crates and coins. Leave it `false` (default) for gear that must stay unique. Stackable items are skipped by dupe detection |
 | `customModelData` | number | Resource-pack model id |
+| `unbreakable` | boolean | If true, the item never loses durability (applied version-safely). Pair with the `HIDE_UNBREAKABLE` flag to hide the tag |
 | `skullOwner` | string | Player name, for `PLAYER_HEAD` skins |
+| `skullTexture` | string | Custom skin for a `PLAYER_HEAD`: a base64 texture value, a texture URL (`http://textures.minecraft.net/texture/...`), or a bare texture hash. Renders as a real inventory item across versions. Leave empty for none |
+| `skullSignature` | string | Optional Mojang signature for `skullTexture` (only needed for signed textures; usually omitted) |
 | `stats` | object[] | Stat modifiers (authored in the editor; preserved on re-import) |
 | `actions` | Action[] | The built-in trigger behavior graph (see below) |
 | `customEvents` | object[] | React to ANY Bukkit event by its full class name (see Custom events) |
 | `recipe` | object[] | Optional shaped crafting recipe, up to 9 slots row-major (3x3). `null` for empty slots. Each slot is `{ "material": "DIAMOND", "amount": 1 }` (vanilla) or `{ "item": "custom_item_name", "amount": 1 }` (another custom item). `amount` defaults to 1 and is how many are consumed from that slot, so `amount > 1` is supported. Example: `[{"material":"DIAMOND"},null,null,{"material":"DIAMOND"},null,null,{"material":"STICK"},null,null]` |
+| `attributes` | object[] | Addon attributes applied to the item (reforge stones, PowerScrolls, etc.). Each entry is `{ "addon", "attribute", "value" }`. See Addon attributes |
+
+## Addon attributes
+
+Some behavior comes from ItemsCore **addons** (separate plugins) that attach **attributes** to an item. Set them with the `attributes` array. Each entry uses the exact addon and attribute names shown in the in-game addon editor:
+
+```json
+"attributes": [
+  { "addon": "ReforgesCore", "attribute": "Reforge stone", "value": "sharp" }
+]
+```
+
+| `addon` | string | The addon that owns the attribute, e.g. `ReforgesCore`, `PowerScrolls` |
+| `attribute` | string | The attribute name exactly as in the addon editor, e.g. `Reforge stone`, `Is a scroll`, `Unreforgeable` |
+| `value` | string \| boolean \| number | String for text attributes, `true`/`false` for toggles |
+
+You can also use `{ "name": "ReforgesCore_Reforge stone", "value": "sharp" }` (the raw `Addon_Attribute` id that `/ic export` writes), but prefer the `addon` + `attribute` pair.
+
+Known addon attributes:
+
+| Addon | Attribute | Value | Effect |
+|---|---|---|---|
+| `ReforgesCore` | `Reforge stone` | reforge name (string) | Turns the item into a stone that applies that reforge in the Anvil (`/advancedreforge`) menu. The reforge must already exist (`/reforges`) |
+| `ReforgesCore` | `Unreforgeable` | `true` | Item can never be reforged |
+| `PowerScrolls` | `Is a scroll` | `true` | Turns the item into a PowerScroll used to upgrade other items |
+
+Re-importing over an existing item **merges** attributes: it overwrites the one you name and keeps the others. Only the named addon needs to be installed for its attribute to take effect.
 
 ## Action
 
@@ -32,7 +63,7 @@ This is the offline reference for the item format ItemsCore imports. When the li
 |---|---|---|
 | `trigger` | string, required | One of the triggers below |
 | `needBlock` | `BOTH` \| `AIR` \| `BLOCK` | Optional per-action override of the item default |
-| `cooldown` | duration string | Optional per-player reuse delay. Any duration: a number plus a unit s/m/h, e.g. `"5s"`, `"45s"`, `"2m"`, `"90s"`, `"1h"` (a bare number means seconds) |
+| `cooldown` | duration string | Optional reuse delay, PER ITEM (two of the same item have independent cooldowns). This is the LOGIC GATE only: it blocks the action from running again and sends the `cooldownMessage`. It does NOT grey the item out by itself (an item can have several actions with different cooldowns, so auto-greying would be ambiguous). To show the vanilla grey-out / sweep, call `core.setItemCooldown(player, seconds)` inside the action. Any duration: a number plus a unit s/m/h, e.g. `"5s"`, `"45s"`, `"2m"`, `"90s"`, `"1h"` (a bare number means seconds) |
 | `cooldownMessage` | string | Optional message sent when the player triggers this action while on cooldown. Supports `&` colors and placeholders `%remaining_seconds%`, `%remaining_minutes%`, `%remaining_hours%` (whole time left in that unit, rounded up), `%remaining%` (formatted like `1m 30s`), `%remaining_millis%`. Needs `cooldown` set to do anything |
 | `steps` | Step[] | Run in order, combined by each step's `operatorToNext` |
 
@@ -54,8 +85,27 @@ This is the offline reference for the item format ItemsCore imports. When the li
 | `armorUnEquipEvent` | The item (armor) is unequipped | player, item, event |
 | `playerMoveEvent` | Moves while holding or wearing it | player, item, event |
 | `playerDamageEvent` | The holder/wearer takes damage | player, item, event |
+| `damageEvent` | The holder DEALS damage to something with the item (best "on hit" trigger for weapons) | attacker, victim, item, cause, damage, event |
+| `intervalAction` | Repeats automatically on a timer while the item is held or worn (see below) | player, item, event |
 | `projectileHitEntityEvent` | A custom projectile from this item hits an entity | shooter, victim, item, lastLocation, event |
 | `projectileHitBlockEvent` | A custom projectile from this item hits a block | shooter, item, lastLocation, event |
+
+Note: `leftAction` fires on left-click of AIR or a block, NOT when you hit a mob (hitting a mob is `damageEvent`, with `attacker`/`victim`). Left-click-air is also unreliable in Minecraft, so for "when the player attacks" use `damageEvent`.
+
+### Interval / repeating actions
+
+An `intervalAction` runs over and over on a timer for as long as the item is held or worn. Add an `interval` field (in ticks, 20 = 1 second). Use it for auras (repeating particles), passive effects you keep topped up, or anything that should tick while equipped. Because it stops the moment the item is unequipped, a short re-applied potion effect becomes an "effect while held/worn".
+
+```json
+{
+  "trigger": "intervalAction",
+  "interval": 20,
+  "steps": [
+    { "call": "core.giveEffect", "args": [ { "var": "player" }, "NIGHT_VISION", 60, 0, true, false ], "operatorToNext": "END" },
+    { "call": "core.createParticleByLocation", "args": [ { "call": "core.addToLocation", "args": [ { "call": "player.getLocation", "args": [] }, 0, 2.3, 0 ] }, { "call": "particles.colored", "args": [255, 224, 138, 1] }, 0, 5, 1 ], "operatorToNext": "END" }
+  ]
+}
+```
 
 ## Step
 
@@ -137,6 +187,85 @@ For most items, every step uses `END`. Operators other than `END` build a single
 | `steps` | Step[] | Same step format as an action (below) |
 
 Variables in a custom event step: `player` (the player the plugin finds on the event), `item`, `event` (the fired event itself - read its data with calls like `{ "call": "event.getBlock", "args": [] }`), plus `core` / `particles` / `values` / `api`. A custom event only fires while the player has the item (held, worn, or anywhere in the inventory for talismans). Use the exact class name; do not guess the package.
+
+## Item variables and dynamic lore
+
+An item can store its own values that travel with that exact item, even when it is moved, dropped or traded. Use them for per item state like an upgrade level, a kill counter or charges left. This is how you build upgradable items and live updating lore.
+
+- `core.setItemVariable(player, "level", 1)` stores a value on the held item.
+- `core.getItemVariable(player, "level")` / `core.getItemVariableOrDefault(player, "level", 1)` read it back.
+- `core.addItemVariable(player, "kills", 1)` adds to a number (counting from 0) and returns the new total; `core.subtractItemVariable(player, "souls", 10)` spends from it.
+- `core.getItemVariableNumber(player, "souls")` reads a variable as a number (0 if unset) so you can do math with it.
+- Write `{var_yourKey}` anywhere in the item's `lore` and it shows that variable (a missing value shows `0`).
+- After changing a variable, call `core.refreshItemLore(player)` to redraw the held item's lore so the new value appears live.
+
+**Build abilities as nested calls, not code strings.** Prefer the structured `call` form so the ability stays fully editable in the in-game item editor. Do the math with the generic helpers - `core.min`, `core.max`, `core.clamp`, `core.add`, `core.subtract`, `core.multiply`, `core.divide` - instead of `core.runCode`/`doIf`. Example: a nova that scales with a counter but is capped at 10 - damage `core.add(4, core.multiply(core.min(core.getItemVariableNumber(player, "souls"), 10), 0.5))`, then `core.subtractItemVariable(player, "souls", core.min(core.getItemVariableNumber(player, "souls"), 10))` to spend only what was used. The numbers (4, 0.5, 10) are plain literals in the item, editable by the owner.
+
+Upgrade pattern: on the trigger, `core.addItemVariable(player, "kills", 1)`, then `core.doIf` the total reached a threshold to bump a `level` variable, then `core.refreshItemLore(player)`. Block-mining progress uses a `customEvents` entry on `org.bukkit.event.block.BlockBreakEvent`.
+
+## Item cooldowns
+
+Two separate things: the **gate** and the **grey-out**. The action `cooldown` field (above) is the gate - it blocks the action from re-triggering and sends the `cooldownMessage`, per item. It does NOT grey the item out on its own. The grey-out is opt-in: call `core.setItemCooldown(player, 3)` inside the action to put a real vanilla cooldown on the held item for 3 seconds (greys out with the sweeping overlay like an ender pearl, per item on 1.21.2+). This is deliberate, because one item can have several actions with different cooldowns. Guard an ability with `core.hasItemCooldown(player)` and `core.getItemCooldownRemaining(player)` (ticks left).
+
+For area-of-effect abilities, prefer the ready-made structured helpers so you never need a loop string: `core.pullNearbyLiving(player, x, y, z, strength)` (vacuum/black hole), `core.knockbackNearbyLiving(player, x, y, z, strength)` (shockwave) and `core.lightningNearbyLiving(player, x, y, z)` (chain storm). They all act only on players and mobs, never dropped items or xp orbs. For a custom per-target effect that has no helper, fall back to `core.loopThrough("...currentArrayObject...", core.getNearbyLivingEntities(player, 6, 4, 6).toArray(), 2)`. Use `core.dashForward(player, power, lift)` for a dash/leap in the look direction.
+
+Custom items are unplaceable: the plugin blocks placing a custom item as a block no matter its material, so you can freely use materials like POPPY, GLOWSTONE or any block as an item without it being placeable.
+
+## Morphing an item
+
+`core.morphHeldItem(player, "MAGMA_BLOCK")` changes only how the held item LOOKS by swapping its material, while it stays the exact same custom item (same id, lore and behavior). `core.unmorphHeldItem(player)` restores the original material. Use it for disguises or dynamic appearances.
+
+## Worked example: a lucky voucher (one-time consumable)
+
+A stackable consumable that is removed on use and gives a random reward. `core.removeHeldItem(player)` consumes one (removes the stack when it hits the last one). `core.randomFromList` rolls a reward id and `core.giveCustomItem` hands a fresh unique copy over.
+
+```json
+{
+  "name": "lucky_voucher",
+  "fancyName": "&6Lucky Voucher",
+  "material": "PAPER",
+  "needBlock": "BOTH",
+  "lore": ["&7Right-click to claim a random reward."],
+  "talisman": false,
+  "stackable": true,
+  "actions": [
+    {
+      "trigger": "rightAction",
+      "needBlock": "BOTH",
+      "steps": [
+        { "call": "core.removeHeldItem", "args": [ { "var": "player" } ], "operatorToNext": "END" },
+        { "call": "core.giveCustomItem", "args": [ { "var": "player" }, { "call": "core.randomFromList", "args": ["magic_sword,storm_blade,healers_touch"] }, 1 ], "operatorToNext": "END" },
+        { "call": "core.sendColorMessage", "args": [ { "var": "player" }, "&aYou claimed a reward!" ], "operatorToNext": "END" }
+      ]
+    }
+  ],
+  "customEvents": []
+}
+```
+
+## Worked example: an upgradable blade (item variables + dynamic lore)
+
+```json
+{
+  "name": "upgrade_blade",
+  "fancyName": "&bUpgrade Blade",
+  "material": "IRON_SWORD",
+  "needBlock": "BOTH",
+  "lore": ["&7Kills: &f{var_kills}", "&7Power: &f{var_power}"],
+  "talisman": false,
+  "actions": [
+    {
+      "trigger": "leftAction",
+      "needBlock": "BOTH",
+      "steps": [
+        { "call": "core.addItemVariable", "args": [ { "var": "player" }, "kills", 1 ], "operatorToNext": "END" },
+        { "call": "core.refreshItemLore", "args": [ { "var": "player" } ], "operatorToNext": "END" }
+      ]
+    }
+  ],
+  "customEvents": []
+}
+```
 
 ## Bukkit objects expose their full Spigot API
 

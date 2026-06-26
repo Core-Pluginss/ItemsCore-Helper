@@ -11,6 +11,12 @@ ItemsCore is a Minecraft (Bukkit/Spigot) plugin that lets a server owner create 
 
 Always produce a **clean item JSON** (the format described below). Never hand-write the plugin's internal item YAML or its generated JavaScript `code`. When the user imports your JSON, the plugin builds **both** the runnable code **and** the in-game GUI action graph from it. That means an item you create this way still works **and** stays fully editable in the in-game editor. Hand-writing raw code produces an item the GUI cannot open, which is exactly the problem this format avoids.
 
+## Step 0: Find the ItemsCore folder
+
+Before creating or changing anything, locate the **ItemsCore plugin folder**. It is the folder named `ItemsCore` inside the server's `plugins` folder (`plugins/ItemsCore/`) and it contains an `items/` folder, a `stats/` folder, and `config.yml`. Items go in its `imports/` folder; stats live in `stats/stats.yml`.
+
+If you cannot find a folder with those markers from where you are running (check the working directory and obvious server paths), **ask the user for the absolute path to their ItemsCore plugin folder** (for example `C:\Servers\survival\plugins\ItemsCore`) and use that. Never guess a path or write files outside that folder.
+
 ## Step 1: Get the API (do this first)
 
 Use the real API instead of guessing method names.
@@ -23,11 +29,16 @@ Preferred - the `itemscore` MCP server. It runs locally on the user's machine (i
 - `get_item_schema()` - the full field reference for the clean item JSON
 - `validate_item(item)` - checks an item JSON and returns errors and warnings
 - `generate_item_template(kind?)` - a valid starter item (`basic` or `ability`)
+- `get_stat_schema()` - the stats.yml format for creating and editing stats
+- `validate_stat(stat)` - checks one stat object before you write it into stats.yml
+- `list_commands()` - every in-game command (usage, description, permission) so you can help with anything
 
 Fallback - if no MCP is connected, a hosted copy is available over plain HTTP:
 - MCP endpoint: `https://www.coredevelopment.shop/api/mcp`
 - API manifest: `https://www.coredevelopment.shop/api/itemscore/manifest`
 - Item schema: `https://www.coredevelopment.shop/api/itemscore/item-schema`
+- Stat format: `https://www.coredevelopment.shop/api/itemscore/stat-schema`
+- Commands: `https://www.coredevelopment.shop/api/itemscore/commands`
 - Quick guide: `https://www.coredevelopment.shop/llms.txt`
 
 If nothing is reachable, use `ITEM_FORMAT.md` in this folder as the offline reference.
@@ -66,7 +77,37 @@ Rules:
 - `operatorToNext` joins a step to the next one. Use `END` to end a statement. Other values (`ADD`, `EQUALS`, `AND`, ...) build expressions and conditions. See `ITEM_FORMAT.md`.
 - `actions` only cover the built-in triggers. To react to any OTHER Bukkit event, add a `customEvents` entry with the event's full class name (e.g. `org.bukkit.event.block.BlockBreakEvent`) and the same `steps` format - variables are `player`, `item`, `event`. The import is blocked if the class name is not found on the server, so use the exact fully-qualified name.
 
+Advanced item features (full details and worked examples in `ITEM_FORMAT.md`):
+- **Per-item variables and dynamic lore:** store state that travels with the exact item (`core.setItemVariable` / `core.addItemVariable` / `core.getItemVariable`), show it in lore with the `{var_key}` placeholder, and redraw it live with `core.refreshItemLore`. This is how you build upgradable items and counters.
+- **One-time consumables (vouchers, crates):** set `"stackable": true` so copies stack, then `core.removeHeldItem` to consume one and `core.giveCustomItem(player, core.randomFromList("a,b,c"), 1)` to hand out a random fresh reward.
+- **Visual item cooldowns:** `core.setItemCooldown(player, seconds)` greys the item and shows the ender-pearl sweep; guard with `core.hasItemCooldown`.
+- **Morphing:** `core.morphHeldItem(player, material)` changes only the look while keeping the same item; `core.unmorphHeldItem` restores it.
+- **Block abilities (vein miner, etc.):** from a `BlockBreakEvent` custom event, `core.veinMine(event, item, 64, 8)` shatters the whole connected vein of the same block; `core.breakBlockWithItem(block, item)` mines a single block with the item's own drops.
+- **Delayed effects:** schedule with `core.runRunnableLater(core.createRunnable("...code..."), ticks)` (20 ticks = 1s). Build the runnable with `core.createRunnable` and let the action call it; never eval a raw code string at runtime.
+
 Find the exact method you need with `search_methods` / `get_method` before using it. Do not invent method names.
+
+## Addon items: reforge stones, PowerScrolls, and other addon attributes
+
+Some features come from ItemsCore **addons** (separate plugins) that attach **attributes** to an item. Set them with an `attributes` array in the item JSON - each entry is `{ "addon", "attribute", "value" }`, using the exact addon and attribute names shown in the in-game addon editor. Call `get_item_schema` and read its `knownAddons` map for the current list.
+
+- **Reforge stone (ReforgesCore)** - turns the item into a stone that applies a named reforge in the Anvil (`/advancedreforge`) menu. The reforge must already exist on the server (created with `/reforges`).
+  ```json
+  {
+    "name": "sharp_stone", "fancyName": "&bSharpness Stone", "material": "PAPER",
+    "attributes": [ { "addon": "ReforgesCore", "attribute": "Reforge stone", "value": "sharp" } ]
+  }
+  ```
+- **PowerScroll (PowerScrolls)** - turns the item into a scroll used to upgrade other items and add abilities to them.
+  ```json
+  {
+    "name": "power_scroll", "fancyName": "&dPower Scroll", "material": "WRITABLE_BOOK",
+    "attributes": [ { "addon": "PowerScrolls", "attribute": "Is a scroll", "value": true } ]
+  }
+  ```
+- **Unreforgeable (ReforgesCore)** - `{ "addon": "ReforgesCore", "attribute": "Unreforgeable", "value": true }` blocks the item from ever being reforged.
+
+Values are strings for text attributes (like the reforge name) and `true`/`false` for toggles. Importing over an existing item merges attributes in: it overwrites the named one and keeps the rest. `/ic export <item>` writes the item's attributes too, so you can export, tweak, and re-import. Only the named addon needs to be installed for its attribute to do anything in-game.
 
 ## Bukkit and Spigot objects
 
@@ -102,16 +143,40 @@ Items are identified by their `name`. **To change an item that already exists, d
 
 If the item is a **legacy code-only item** (made before this format, so the editor cannot open it), have the user run `/ic adopt <name>` first. That converts its code into GUI actions; then export, edit, and re-import as above.
 
+## Stats
+
+Stats are named values shown on items (Strength, Crit Chance, Mana, ...). Unlike items, a stat is a simple flat object that is safe to edit directly. Call `get_stat_schema` for the full reference and `validate_stat` to check one before writing it.
+
+- Stats are defined globally in `plugins/ItemsCore/stats/stats.yml`, a plain YAML list.
+- Each entry MUST begin with the exact marker line `==: me.tastycake.itemscore.item.stats.Stat`.
+- Fields: `name` (id, no spaces), `fancyName` (lore label, `&` colors), `fancyValue` (value format containing `%value%`), `baseValue` (default number).
+
+```yaml
+stats:
+- ==: me.tastycake.itemscore.item.stats.Stat
+  name: strength
+  fancyName: '&cStrength'
+  fancyValue: '&c+%value%'
+  baseValue: 10
+```
+
+To create or edit a stat: edit `stats.yml`, then tell the user to run `/ic reload stats` (or `/ic reload stats <name>` for one). The in-game GUI is `/stats`. Per-item stat values are set in the editor (`/itemeditor <item>` -> Stats); item lore shows each active stat as `fancyName` + space + `fancyValue` with `%value%` replaced by the effective value.
+
 ## Command cheat sheet
+
+Call `list_commands` for the full list. The ones you use most:
 
 | Command | What it does |
 |---|---|
 | `/ic import <file>` | Import a clean JSON from `plugins/ItemsCore/imports/` (live + GUI-editable) |
-| `/ic export <item>` | Write an existing item to `plugins/ItemsCore/exports/<item>.json` |
+| `/ic export <item>` | Write an existing item to `plugins/ItemsCore/exports/<item>.import` |
 | `/ic adopt <item>` | Make a legacy code-only item GUI-editable |
-| `/ic reload [item]` | Reload all items, or one, and report success or errors |
+| `/ic reload [items\|stats] [name]` | Reload everything, a whole category, or one item/stat |
+| `/ic install <item\|template\|stat\|addon> <url\|name>` | Download content from a URL, or browse/install addons |
 | `/ic exportapi` | Regenerate `plugins/ItemsCore/itemscore-api.json` (the API manifest) |
 | `/itemeditor <item>` | Open the visual editor for an item |
+| `/stats` | Create, edit and delete stats (or edit `stats.yml` + `/ic reload stats`) |
+| `/addons` | Manage installed ItemsCore addons |
 
 ## When in doubt
 
