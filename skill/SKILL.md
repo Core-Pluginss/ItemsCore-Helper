@@ -21,7 +21,10 @@ If you cannot find a folder with those markers from where you are running (check
 
 Use the real API instead of guessing method names.
 
+**Verify the tooling before you trust it - do not assume.** At the start of every session, and right after any install, call **`health_check`**. The fact that it answers proves the `itemscore` MCP server is actually connected. Never tell the user the tooling is installed or ready because you *ran an install command* - say it only after `health_check` returns. If you cannot call it, the server is not loaded: run `npx -y itemscore-helper@latest install` (or `npx -y itemscore-helper@latest doctor` to repair and restore missing files), reload the MCP servers, and check again. If `health_check` returns `nextActions` (outdated helper, missing skill files, a stale exported API), do them before building. The user may have moved or deleted files since last time, or a newer version may have shipped - a previous install being fine does not mean it still is.
+
 Preferred - the `itemscore` MCP server. It runs locally on the user's machine (installed with `npx itemscore-helper`) and exposes these tools. If it is connected, call them:
+- `health_check()` - verify the server is connected, the API is current, and the skill files exist; returns `ok` and a `nextActions` list. Call this first.
 - `search_methods(query, binding?, includeUseless?)` - find scripting methods by name, category, or description
 - `get_method(name, binding?)` - full signature, params, return, and example for one method (accepts `core.teleport` or `teleport`)
 - `list_triggers()` - every trigger an item can react to, and the variables available in each
@@ -32,6 +35,7 @@ Preferred - the `itemscore` MCP server. It runs locally on the user's machine (i
 - `get_stat_schema()` - the stats.yml format for creating and editing stats
 - `validate_stat(stat)` - checks one stat object before you write it into stats.yml
 - `list_commands()` - every in-game command (usage, description, permission) so you can help with anything
+- `check_updates()` - confirm the helper and API are current. Call this if a method is missing or an imported item does not work: the local helper may be out of date, or a stale `/ic exportapi` file may be in use. It tells you whether to run `npx -y itemscore-helper@latest install` (then reload MCP) or `/ic exportapi` in-game.
 
 Fallback - if no MCP is connected, a hosted copy is available over plain HTTP:
 - MCP endpoint: `https://www.coredevelopment.shop/api/mcp`
@@ -124,7 +128,7 @@ These Spigot methods are not listed by `search_methods`, because the ItemsCore A
 
 ## Step 3: Validate
 
-Run `validate_item` on your JSON. Fix every entry under `errors` before continuing. `warnings` are usually fine (for example a Bukkit call the API cannot introspect), but read them.
+Run `validate_item` on your JSON. Fix every entry under `errors` before continuing. Read the `warnings` too - most are harmless (for example a Bukkit call the API cannot introspect), but a warning that an argument **passes a variable that is not a known built-in** is not harmless: an undefined variable compiles to a raw identifier and crashes the item with `"<name> is not defined"` at runtime. If you did not define that variable in an earlier step, replace it with a literal value or a real variable (`player`, `item`, `event`, ...).
 
 ## Step 4: Hand it to the user
 

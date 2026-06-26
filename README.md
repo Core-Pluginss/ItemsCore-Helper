@@ -44,6 +44,7 @@ The MCP server is `npx -y itemscore-helper serve`. It speaks the standard stdio 
 |---|---|
 | `npx itemscore-helper` | Auto-detect your AI tools and connect the local MCP server |
 | `npx itemscore-helper --dry-run` | Show what would change, without writing anything |
+| `npx itemscore-helper doctor` | Check and repair the setup: restore missing skill files, re-wire the MCP server, validate the API, check for updates |
 | `npx itemscore-helper serve` | Run the local MCP server (this is what your AI runs) |
 | `npx itemscore-helper print` | Print the skill instructions to stdout |
 | `npx itemscore-helper mcp` | Print the MCP server config |
@@ -75,12 +76,20 @@ command = "npx"
 args = ["-y", "itemscore-helper", "serve"]
 ```
 
+### Staying up to date and verifying the setup
+
+The MCP server runs as `npx -y itemscore-helper@latest serve`, so npx re-resolves the newest published helper each time it starts instead of reusing a cached old copy. The server and the `install` command also check npm on start and tell you (and your AI) when a newer version is out. To force a refresh at any time: `npx -y itemscore-helper@latest install`, then reload your MCP servers.
+
+Your AI should **verify, not assume**, that the tooling is connected. The MCP server exposes a `health_check` tool that confirms it is reachable, lists the available tools, reports the API version and method count, checks the skill files exist, and flags an outdated helper or a stale exported API - returning an `ok` flag and a `nextActions` list. A well-behaved agent calls it at the start of a session and after installing, and only tells you it is set up once that returns `ok`. If files were removed or the install is incomplete, `npx -y itemscore-helper@latest doctor` checks and repairs the setup (restores missing skill files, re-wires the MCP server, validates the API, checks for updates).
+
 ### Use your server's exact API (optional)
 
 By default the server ships with a snapshot of the standard ItemsCore API. If you use addons that add methods, run `/ic exportapi` in-game and point the server at the generated file so it knows your exact API:
 
 - set an env var `ITEMSCORE_API=/path/to/plugins/ItemsCore/itemscore-api.json`, or
 - add `"--manifest", "/path/to/itemscore-api.json"` to the `args`.
+
+An auto-detected `plugins/ItemsCore/itemscore-api.json` is used only when it is at least as new as the bundled API. If it is from an older plugin version (you updated the plugin but did not re-run `/ic exportapi`), it is ignored in favour of the current bundled API so your AI never builds against a dead manifest - re-run `/ic exportapi` to refresh it.
 
 ### Prefer not to install anything?
 

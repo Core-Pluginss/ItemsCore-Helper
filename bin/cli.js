@@ -4,6 +4,9 @@
 const fs = require("fs")
 const path = require("path")
 const { autoConfigure } = require("../lib/install.js")
+const { checkForUpdate } = require("../lib/update.js")
+const M = require("../lib/manifest.js")
+const PKG = require("../package.json")
 
 const HOSTED_URL = "https://www.coredevelopment.shop/api/mcp"
 const LLMS_URL = "https://www.coredevelopment.shop/llms.txt"
@@ -14,15 +17,20 @@ const SETUP_PROMPT = [
   "You are my coding agent and I do not know how to code, so do the whole setup yourself - actually run the commands, do not just tell me what to run.",
   "",
   "1. In my project folder, run this to download and connect the ItemsCore tools:",
-  "   npx -y itemscore-helper install",
+  "   npx -y itemscore-helper@latest install",
   '   It installs a local helper and wires an "itemscore" MCP server into this project. When it finishes, reload your MCP servers (or ask me to restart this app) so the itemscore tools load. If you truly cannot run commands, add this to your MCP config instead:',
-  '   {"mcpServers":{"itemscore":{"command":"npx","args":["-y","itemscore-helper","serve"]}}}',
+  '   {"mcpServers":{"itemscore":{"command":"npx","args":["-y","itemscore-helper@latest","serve"]}}}',
   "",
-  "2. Read " + LLMS_URL + " so you know the ItemsCore item format, how stats work, the in-game commands, and every method available.",
+  "2. VERIFY it actually worked - do not assume. Call the health_check tool from the itemscore MCP server.",
+  "   - If you cannot call it, the MCP server is NOT connected. Do not tell me it is installed. Run  npx -y itemscore-helper@latest doctor  to repair and restore any missing files, reload the MCP servers, and try health_check again. If it still fails, tell me exactly what failed.",
+  "   - If health_check returns any nextActions (outdated helper, missing skill files, a stale exported API), carry them out before continuing.",
+  "   - Only once health_check returns ok have you confirmed the setup. Run this check at the START OF EVERY SESSION too, not just the first time - I may have moved or deleted files, or a newer version may have shipped.",
   "",
-  "3. Find my ItemsCore plugin folder (plugins/ItemsCore/ - it has items/, stats/ and config.yml). If you cannot find it, ask me for its full path before writing anything.",
+  "3. Read " + LLMS_URL + " so you know the ItemsCore item format, how stats work, the in-game commands, and every method available.",
   "",
-  "4. Tell me you are ready, then ask what I want to build. You can make and edit items, create and edit stats, and tell me the right commands. For an item: build the clean item JSON, validate it with validate_item, and save it as a file ending in .import (for example flame_sword.import) - never .item. Tell me to drop it in plugins/ItemsCore/imports/ and run /ic import in-game. To change an item I already imported, edit the JSON and import it again with the same name (it overwrites). For a stat: read get_stat_schema, edit plugins/ItemsCore/stats/stats.yml, then tell me to run /ic reload stats. Items stay fully editable in the in-game editor.",
+  "4. Find my ItemsCore plugin folder (plugins/ItemsCore/ - it has items/, stats/ and config.yml). If you cannot find it, ask me for its full path before writing anything.",
+  "",
+  "5. Tell me you are ready, then ask what I want to build. You can make and edit items, create and edit stats, and tell me the right commands. For an item: build the clean item JSON, validate it with validate_item (fix every error, read the warnings - a warning about an undefined variable means it will crash at runtime), and save it as a file ending in .import (for example flame_sword.import) - never .item. Tell me to drop it in plugins/ItemsCore/imports/ and run /ic import in-game. To change an item I already imported, edit the JSON and import it again with the same name (it overwrites). For a stat: read get_stat_schema, edit plugins/ItemsCore/stats/stats.yml, then tell me to run /ic reload stats. Items stay fully editable in the in-game editor.",
 ].join("\n")
 
 function copyDir(src, dest) {
@@ -56,6 +64,7 @@ function printHelp() {
     "  npx itemscore-helper            Auto-detect your AI tools and connect the local MCP server",
     "  npx itemscore-helper --dry-run  Show what would be changed, without writing anything",
     "  npx itemscore-helper serve      Run the local MCP server (this is what your AI runs)",
+    "  npx itemscore-helper doctor     Check and repair the setup (restore missing files, re-wire MCP, check for updates)",
     "  npx itemscore-helper print      Print the skill instructions (SKILL.md) to stdout",
     "  npx itemscore-helper mcp        Print the MCP server config",
     "  npx itemscore-helper help       Show this help",
@@ -69,7 +78,7 @@ function printHelp() {
 
 function printMcp() {
   console.log(
-    JSON.stringify({ mcpServers: { itemscore: { command: "npx", args: ["-y", "itemscore-helper", "serve"] } } }, null, 2)
+    JSON.stringify({ mcpServers: { itemscore: { command: "npx", args: ["-y", "itemscore-helper@latest", "serve"] } } }, null, 2)
   )
 }
 
@@ -80,16 +89,16 @@ function printSkill() {
 function manualLines() {
   return [
     "  Add this to your AI client's MCP config (same for Claude, Cursor, Gemini):",
-    '    {"mcpServers":{"itemscore":{"command":"npx","args":["-y","itemscore-helper","serve"]}}}',
+    '    {"mcpServers":{"itemscore":{"command":"npx","args":["-y","itemscore-helper@latest","serve"]}}}',
     "  Codex (~/.codex/config.toml):",
     "    [mcp_servers.itemscore]",
     '    command = "npx"',
-    '    args = ["-y","itemscore-helper","serve"]',
+    '    args = ["-y","itemscore-helper@latest","serve"]',
     "  No MCP client? A hosted copy is at " + HOSTED_URL + " (guide: " + LLMS_URL + ").",
   ]
 }
 
-function runInstall(dryRun) {
+async function runInstall(dryRun) {
   const targetDir = path.resolve(process.cwd(), "itemscore-helper")
   if (!dryRun) copyDir(SKILL_DIR, targetDir)
 
@@ -124,11 +133,74 @@ function runInstall(dryRun) {
     out.push("")
     out.push("Skill files written to " + targetDir + " - hand SKILL.md to your AI if it asks for guidance.")
   }
+
+  const update = await checkForUpdate(PKG.version, 2000).catch(() => null)
+  if (update && update.outdated) {
+    out.push("")
+    out.push("Heads up: a newer itemscore-helper is available (v" + update.latest + "; you ran v" + update.current + ").")
+    out.push("Re-run  npx -y itemscore-helper@latest install  to get the latest API and tools.")
+  }
+
   out.push("")
   console.log(out.join("\n"))
 }
 
-function main() {
+// Checks the local setup and repairs what it safely can: restores missing skill files,
+// re-wires the MCP server into detected AI tools, validates the API manifest, and checks
+// for a newer published helper. Prints a [ok] / [repaired] / [action] report so an agent
+// can prove the install is intact instead of assuming it.
+async function runDoctor() {
+  const out = ["", "ItemsCore helper - doctor (checking and repairing your setup)", ""]
+  let needsAction = false
+
+  const targetDir = path.resolve(process.cwd(), "itemscore-helper")
+  if (!fs.existsSync(path.join(targetDir, "SKILL.md"))) {
+    copyDir(SKILL_DIR, targetDir)
+    out.push("  [repaired] Restored missing skill files to " + targetDir)
+  } else {
+    out.push("  [ok]       Skill files present at " + targetDir)
+  }
+
+  try {
+    const idx = M.buildIndex(M.loadManifest(undefined))
+    let methods = 0
+    for (const b of idx.bindings) methods += (b.methods || []).length
+    out.push("  [ok]       API manifest: " + (idx.isBundled ? "bundled snapshot" : idx.source) + " (plugin v" + String(idx.manifest.pluginVersion) + ", " + methods + " methods)")
+    if (idx.staleExport) {
+      needsAction = true
+      out.push("  [action]   A stale exported API (plugin v" + idx.staleExport.exportVersion + ") at " + idx.staleExport.path + " was ignored in favour of the bundled API. Run /ic exportapi in-game to refresh it, or delete that file.")
+    }
+  } catch (e) {
+    needsAction = true
+    out.push("  [fail]     Could not load the API manifest: " + (e && e.message ? e.message : e))
+  }
+
+  const results = autoConfigure({ dryRun: false })
+  const configured = results.filter((r) => r.ok)
+  if (configured.length > 0) {
+    out.push("  [ok]       MCP server wired into: " + configured.map((r) => r.name).join(", "))
+  } else {
+    needsAction = true
+    out.push("  [action]   No AI client configs were found to wire the MCP server into. Run  npx -y itemscore-helper@latest install  inside your project, or add it by hand (npx itemscore-helper mcp).")
+  }
+
+  const update = await checkForUpdate(PKG.version, 2500).catch(() => null)
+  if (!update) {
+    out.push("  [skip]     Could not reach npm to check for a newer helper (offline or blocked).")
+  } else if (update.outdated) {
+    needsAction = true
+    out.push("  [action]   A newer helper is published (v" + update.latest + "; you have v" + update.current + "). Run  npx -y itemscore-helper@latest install  to update.")
+  } else {
+    out.push("  [ok]       Helper is up to date (v" + PKG.version + ").")
+  }
+
+  out.push("")
+  out.push(needsAction ? "Some items need action (see [action] above). Fix them, then reload/restart your AI's MCP servers." : "All good. Reload your MCP servers if you just repaired anything.")
+  out.push("")
+  console.log(out.join("\n"))
+}
+
+async function main() {
   const args = parseArgs(process.argv.slice(2))
   if (args.cmd === "serve") {
     require("./mcp.js")
@@ -137,12 +209,13 @@ function main() {
   if (args.cmd === "help") return printHelp()
   if (args.cmd === "mcp") return printMcp()
   if (args.cmd === "print") return printSkill()
+  if (args.cmd === "doctor") return runDoctor()
   if (args.cmd !== "install") {
     console.error("Unknown command: " + args.cmd + "\nRun: npx itemscore-helper help")
     process.exitCode = 1
     return
   }
-  runInstall(args.dryRun)
+  await runInstall(args.dryRun)
 }
 
 main()

@@ -1,10 +1,20 @@
 #!/usr/bin/env node
 "use strict"
 
+const fs = require("fs")
+const path = require("path")
 const { McpServer } = require("@modelcontextprotocol/sdk/server/mcp.js")
 const { StdioServerTransport } = require("@modelcontextprotocol/sdk/server/stdio.js")
 const { z } = require("zod")
 const M = require("../lib/manifest.js")
+const { checkForUpdate } = require("../lib/update.js")
+const PKG = require("../package.json")
+
+const TOOL_NAMES = [
+  "search_methods", "get_method", "list_triggers", "list_events", "get_item_schema",
+  "validate_item", "generate_item_template", "get_stat_schema", "validate_stat",
+  "list_commands", "check_updates", "health_check",
+]
 
 function getManifestArg() {
   const argv = process.argv.slice(2)
@@ -17,22 +27,79 @@ function jsonResult(data) {
   return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] }
 }
 
+// Some MCP clients serialize object arguments to a JSON string before they reach
+// the server. The validate tools take z.unknown(), so a stringified object would
+// arrive as a string and be wrongly rejected as "not a JSON object". Parse it back
+// when it clearly looks like JSON, leaving real strings untouched.
+function coerceJson(x) {
+  let v = x
+  for (let i = 0; i < 3 && typeof v === "string"; i++) {
+    const t = v.trim()
+    if (!t || (t[0] !== "{" && t[0] !== "[")) break
+    try {
+      v = JSON.parse(t)
+    } catch {
+      break
+    }
+  }
+  return v
+}
+
+function skillStatus() {
+  const dir = path.join(__dirname, "..", "skill")
+  const files = {}
+  let allPresent = true
+  for (const f of ["SKILL.md", "ITEM_FORMAT.md"]) {
+    const ok = fs.existsSync(path.join(dir, f))
+    files[f] = ok
+    if (!ok) allPresent = false
+  }
+  return { dir, files, allPresent }
+}
+
+function methodCount(idx) {
+  let n = 0
+  for (const b of idx.bindings) n += (b.methods || []).length
+  return n
+}
+
 async function main() {
   const idx = M.buildIndex(M.loadManifest(getManifestArg()))
+  const update = await checkForUpdate(PKG.version, 1500).catch(() => null)
+
+  const notices = []
+  if (idx.staleExport) {
+    const s = idx.staleExport
+    notices.push(
+      "A stale exported API manifest (ItemsCore plugin v" + s.exportVersion + ") was found at " + s.path +
+      ", but this helper bundles a newer API (plugin v" + s.bundledVersion + "). The stale file was IGNORED and the current bundled API is being used, because building against an old export produces broken items. Tell the user to refresh it by running /ic exportapi in-game, or to delete that file."
+    )
+  }
+  if (update && update.outdated) {
+    notices.push(
+      "A newer itemscore-helper is published (v" + update.latest + "; this one is v" + update.current + "), so the API and tools here may be out of date. Tell the user to update by running:  npx -y itemscore-helper@latest install  then reload/restart the MCP servers."
+    )
+  }
+  for (const n of notices) process.stderr.write("[itemscore-helper] " + n + "\n")
+
+  const apiSourceNote = idx.isBundled
+    ? " (Using the bundled API snapshot. To match this server's exact API including addon methods, run /ic exportapi and point this server at the generated plugins/ItemsCore/itemscore-api.json via --manifest or the ITEMSCORE_API env var.)"
+    : " (Using the live API manifest at " + idx.source + ".)"
+  const baseInstructions =
+    "ItemsCore is a Minecraft (Bukkit/Spigot) plugin that lets server owners build custom RPG items, stats and abilities with no Java. You can do everything: build and edit items, create and edit stats, and run any plugin command. " +
+    "BEFORE you build anything or tell the user the tooling is installed/ready, CALL the health_check tool. The fact that it returns proves this MCP server is actually connected; if you cannot call it, the tools are not loaded - do NOT claim they are. Re-run  npx -y itemscore-helper@latest install  (or  npx -y itemscore-helper@latest doctor  to repair and restore missing files), then reload the MCP servers, and verify again. If health_check returns any nextActions (outdated helper, missing skill files, a stale exported API), carry them out before building. Do this at the start of every session, not only the first time - never assume a previous install is still intact, the user may have moved or deleted files. " +
+    "FIRST, find the ItemsCore plugin folder. It is the folder named ItemsCore inside the server's plugins folder (plugins/ItemsCore/) and it contains an items/ folder, a stats/ folder, and config.yml. Items go in its imports/ folder, stats live in stats/stats.yml. If you cannot find a folder with those markers from where you are running, ASK THE USER for the absolute path to their ItemsCore plugin folder and use that. Never guess a path or write outside that folder. " +
+    "ITEMS: use the API tools (search_methods/get_method/get_item_schema/generate_item_template), author a clean item JSON, validate it with validate_item, then save it with a .import extension (for example flame_sword.import) - never .item (.item is the plugin's own saved-item format). Put the .import file in plugins/ItemsCore/imports/ and have the user run /ic import <name>. To change an existing item, build the updated JSON with the SAME name and import again - it overwrites and keeps stats/recipe (run /ic export <name> first to get the current JSON). " +
+    "STATS: read get_stat_schema, edit plugins/ItemsCore/stats/stats.yml directly (it is plain YAML), validate each stat with validate_stat, then have the user run /ic reload stats. " +
+    "COMMANDS: call list_commands to know every in-game command so you can help with anything. Items authored this way stay editable in the in-game GUI." +
+    apiSourceNote
+  const instructions = notices.length
+    ? notices.map((n) => "[ACTION NEEDED] " + n).join("\n\n") + "\n\n" + baseInstructions
+    : baseInstructions
 
   const server = new McpServer(
     { name: "itemscore", version: String(idx.manifest.pluginVersion || "1") },
-    {
-      instructions:
-        "ItemsCore is a Minecraft (Bukkit/Spigot) plugin that lets server owners build custom RPG items, stats and abilities with no Java. You can do everything: build and edit items, create and edit stats, and run any plugin command. " +
-        "FIRST, find the ItemsCore plugin folder. It is the folder named ItemsCore inside the server's plugins folder (plugins/ItemsCore/) and it contains an items/ folder, a stats/ folder, and config.yml. Items go in its imports/ folder, stats live in stats/stats.yml. If you cannot find a folder with those markers from where you are running, ASK THE USER for the absolute path to their ItemsCore plugin folder and use that. Never guess a path or write outside that folder. " +
-        "ITEMS: use the API tools (search_methods/get_method/get_item_schema/generate_item_template), author a clean item JSON, validate it with validate_item, then save it with a .import extension (for example flame_sword.import) - never .item (.item is the plugin's own saved-item format). Put the .import file in plugins/ItemsCore/imports/ and have the user run /ic import <name>. To change an existing item, build the updated JSON with the SAME name and import again - it overwrites and keeps stats/recipe (run /ic export <name> first to get the current JSON). " +
-        "STATS: read get_stat_schema, edit plugins/ItemsCore/stats/stats.yml directly (it is plain YAML), validate each stat with validate_stat, then have the user run /ic reload stats. " +
-        "COMMANDS: call list_commands to know every in-game command so you can help with anything. Items authored this way stay editable in the in-game GUI." +
-        (idx.isBundled
-          ? " (Using the bundled API snapshot. To match this server's exact API including addon methods, run /ic exportapi and point this server at the generated plugins/ItemsCore/itemscore-api.json via --manifest or the ITEMSCORE_API env var.)"
-          : " (Using the live API manifest at " + idx.source + ".)"),
-    }
+    { instructions }
   )
 
   server.registerTool(
@@ -113,7 +180,7 @@ async function main() {
         "Validate a clean item JSON object against the ItemsCore schema (unknown methods, wrong argument count, wrong argument order/type). Reports errors (must fix) and warnings (likely fine). Run this before saving. Save the result as a .import file (for example flame_sword.import), never .item.",
       inputSchema: { item: z.unknown().describe("The clean item JSON object to validate") },
     },
-    async ({ item }) => jsonResult(M.validateItem(idx, item))
+    async ({ item }) => jsonResult(M.validateItem(idx, coerceJson(item)))
   )
 
   server.registerTool(
@@ -146,7 +213,7 @@ async function main() {
         "Validate a single stat object (name, fancyName, fancyValue, baseValue) before writing it into stats.yml. Reports errors (must fix) and warnings.",
       inputSchema: { stat: z.unknown().describe("The stat object to validate") },
     },
-    async ({ stat }) => jsonResult(M.validateStat(stat))
+    async ({ stat }) => jsonResult(M.validateStat(coerceJson(stat)))
   )
 
   server.registerTool(
@@ -158,6 +225,92 @@ async function main() {
       inputSchema: {},
     },
     async () => jsonResult(M.commandList())
+  )
+
+  server.registerTool(
+    "check_updates",
+    {
+      title: "Check the ItemsCore helper for updates",
+      description:
+        "Report whether this itemscore-helper is up to date with the latest published version, and whether the API manifest in use is the current bundled one or a (possibly stale) exported file. Run this if methods seem missing or an imported item does not work - the tooling may be out of date.",
+      inputSchema: {},
+    },
+    async () => {
+      const live = await checkForUpdate(PKG.version, 2500).catch(() => null)
+      return jsonResult({
+        helperVersion: PKG.version,
+        latestPublished: live ? live.latest : null,
+        outdated: live ? live.outdated : null,
+        updateCommand: "npx -y itemscore-helper@latest install",
+        apiSource: idx.source,
+        apiIsBundled: idx.isBundled,
+        apiPluginVersion: String(idx.manifest.pluginVersion || "unknown"),
+        staleExportIgnored: idx.staleExport || null,
+        refreshExportCommand: "/ic exportapi",
+        note: live
+          ? live.outdated
+            ? "This helper is out of date. Tell the user to run the updateCommand, then reload MCP servers."
+            : "This helper is up to date."
+          : "Could not reach the npm registry to check (offline or blocked); skipping the version check.",
+      })
+    }
+  )
+
+  server.registerTool(
+    "health_check",
+    {
+      title: "Check the ItemsCore tooling is connected and healthy",
+      description:
+        "Verify the itemscore tooling end to end before you tell the user anything is installed or ready: confirms this MCP server is actually reachable (it answers), lists the available tools, reports the API source and plugin version and method count, checks the skill files exist, checks for a newer published helper, and flags a stale exported API. Returns ok plus a nextActions list. CALL THIS FIRST at the start of a session and after any install - never claim the tooling is set up based on running a command; claim it only after this returns ok, and do whatever nextActions says before building.",
+      inputSchema: {},
+    },
+    async () => {
+      const live = await checkForUpdate(PKG.version, 2500).catch(() => null)
+      const skill = skillStatus()
+      const nextActions = []
+      if (live && live.outdated) {
+        nextActions.push(
+          "Helper is OUTDATED (you have v" + live.current + ", latest is v" + live.latest +
+          "). Run: npx -y itemscore-helper@latest install  then reload/restart the MCP servers."
+        )
+      }
+      if (idx.staleExport) {
+        nextActions.push(
+          "A stale exported API file (plugin v" + idx.staleExport.exportVersion + ") at " + idx.staleExport.path +
+          " was IGNORED in favour of the bundled API (plugin v" + idx.staleExport.bundledVersion +
+          "). Tell the user to run /ic exportapi in-game to refresh it, or to delete that file."
+        )
+      }
+      if (!skill.allPresent) {
+        nextActions.push(
+          "Skill files are missing from " + skill.dir +
+          " (a file was deleted or the install is incomplete). Run: npx -y itemscore-helper@latest install  to restore them."
+        )
+      }
+      return jsonResult({
+        ok: nextActions.length === 0,
+        connected: true,
+        helperVersion: PKG.version,
+        latestPublished: live ? live.latest : null,
+        outdated: live ? live.outdated : null,
+        registryReachable: !!live,
+        apiSource: idx.source,
+        apiIsBundled: idx.isBundled,
+        apiPluginVersion: String(idx.manifest.pluginVersion || "unknown"),
+        methodCount: methodCount(idx),
+        toolCount: TOOL_NAMES.length,
+        tools: TOOL_NAMES,
+        skillFiles: skill,
+        staleExportIgnored: idx.staleExport || null,
+        nextActions,
+        summary:
+          nextActions.length === 0
+            ? "Healthy. The itemscore MCP server is connected, the API is current (plugin v" +
+              String(idx.manifest.pluginVersion) + ", " + methodCount(idx) +
+              " methods), and all " + TOOL_NAMES.length + " tools are available. Safe to build items."
+            : "ACTION NEEDED before building - " + nextActions.length + " item(s): " + nextActions.join("  |  "),
+      })
+    }
   )
 
   const transport = new StdioServerTransport()
