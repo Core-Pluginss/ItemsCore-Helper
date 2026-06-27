@@ -1,6 +1,6 @@
 {
   "name": "itemscore-helper",
-  "version": "1.11.0",
+  "version": "1.14.0",
   "description": "One command sets up any AI (Claude, Codex, Cursor, Gemini, and others) to build and edit custom Minecraft items for the ItemsCore plugin. Auto-detects your AI tools and connects a local MCP server that runs entirely on your machine.",
   "bin": {
     "itemscore-helper": "bin/cli.js",

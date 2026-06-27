@@ -58,7 +58,7 @@ Minimal shape:
   "material": "DIAMOND_SWORD",
   "needBlock": "BOTH",
   "lore": ["&7Left-click to ignite the server."],
-  "talisman": false,
+  "type": "normal",
   "actions": [
     {
       "trigger": "leftAction",
@@ -88,6 +88,11 @@ Advanced item features (full details and worked examples in `ITEM_FORMAT.md`):
 - **Morphing:** `core.morphHeldItem(player, material)` changes only the look while keeping the same item; `core.unmorphHeldItem` restores it.
 - **Block abilities (vein miner, etc.):** from a `BlockBreakEvent` custom event, `core.veinMine(event, item, 64, 8)` shatters the whole connected vein of the same block; `core.breakBlockWithItem(block, item)` mines a single block with the item's own drops.
 - **Delayed effects:** schedule with `core.runRunnableLater(core.createRunnable("...code..."), ticks)` (20 ticks = 1s). Build the runnable with `core.createRunnable` and let the action call it; never eval a raw code string at runtime.
+- **Use requirements:** lock an item until the holder meets a rule (a permission, or a PlaceholderAPI value compared with `>=`, `true`, `contains`, etc.). A locked player gets nothing from it - no abilities, no attacking, no mining, no stats. Add the `requirements` array and show why with the `{requirement:&ctext}` lore placeholder.
+- **Per-item stats:** give an item stat values right in the JSON with the `stats` array (`[{ "stat": "strength", "value": 50 }]`); the stat must exist in `stats.yml`. Render the block with the `{stats}` lore placeholder. No editor step needed.
+- **Leather armour colour:** set `color` to a `#RRGGBB` hex to dye `LEATHER_*` armour. Use the same colour across helmet/chestplate/leggings/boots for a matching set.
+- **Item type (where it works):** `type` controls where the item's stats and effects are active - `"normal"` (hand + off-hand, the default), `"talisman"` (passive from anywhere in the inventory), `"off_hand"` (only in the off-hand), or `"armor"` (only while worn). Set `"armor"` for custom armour and for player-head helmets so reforges/wardrobe treat them as armour. The old `talisman: true` boolean still works and equals `type: "talisman"`.
+- **MiniMessage names and lore:** `fancyName` and `lore` accept MiniMessage tags (`<gradient>`, `<rainbow>`, `<#hex>`, `<bold>`) alongside `&` codes; gradients and hex render fully on 1.16+ and downsample to the nearest colours on older versions.
 
 Find the exact method you need with `search_methods` / `get_method` before using it. Do not invent method names.
 
@@ -164,7 +169,7 @@ stats:
   baseValue: 10
 ```
 
-To create or edit a stat: edit `stats.yml`, then tell the user to run `/ic reload stats` (or `/ic reload stats <name>` for one). The in-game GUI is `/stats`. Per-item stat values are set in the editor (`/itemeditor <item>` -> Stats); item lore shows each active stat as `fancyName` + space + `fancyValue` with `%value%` replaced by the effective value.
+To create or edit a stat: edit `stats.yml`, then tell the user to run `/ic reload stats` (or `/ic reload stats <name>` for one). The in-game GUI is `/stats`. Per-item stat values are set either in the item JSON via its `stats` array (`[{ "stat": "strength", "value": 50 }]`) or in the editor (`/itemeditor <item>` -> Stats); item lore shows each active stat as `fancyName` + space + `fancyValue` with `%value%` replaced by the effective value.
 
 ## Command cheat sheet
 

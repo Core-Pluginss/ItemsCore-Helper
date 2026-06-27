@@ -7,25 +7,53 @@ This is the offline reference for the item format ItemsCore imports. When the li
 | Field | Type | Notes |
 |---|---|---|
 | `name` | string, required | Internal id, no spaces (e.g. `flame_sword`) |
-| `fancyName` | string | Display name, supports `&` color codes |
+| `fancyName` | string | Display name. Supports `&` color codes, `&#RRGGBB` hex, and MiniMessage tags (`<gradient>`, `<rainbow>`, `<#hex>`, `<bold>`, ...). MiniMessage gradients/hex render in full on 1.16+ and downsample to the nearest colours on 1.8-1.15 |
 | `id` | string | Optional explicit id; defaults to `name` |
 | `material` | string, required | Bukkit material (e.g. `DIAMOND_SWORD`, `BLAZE_ROD`, `PLAYER_HEAD`) |
+| `color` | string | Leather armour dye as `#RRGGBB` hex (e.g. `#1ABC9C`). Applies **only** to `LEATHER_HELMET`/`CHESTPLATE`/`LEGGINGS`/`BOOTS`; ignored on other materials. Round-trips through `/ic export` |
 | `needBlock` | `BOTH` \| `AIR` \| `BLOCK` | Default interaction context for the item |
-| `lore` | string[] | Lore lines, support `&` color codes |
+| `lore` | string[] | Lore lines. Support `&` color codes, `&#RRGGBB` hex, MiniMessage tags, `%placeholders%`, `{var_KEY}` item variables, `{stats}`, and `{requirement:&ctext}` (shows only while the holder fails the item's requirements) |
 | `enchantments` | `{ name, level }[]` | e.g. `{ "name": "DAMAGE_ALL", "level": 3 }` |
 | `flags` | string[] | Bukkit ItemFlag names (e.g. `HIDE_ATTRIBUTES`) |
-| `talisman` | boolean | If true, the item works from anywhere in the inventory |
+| `type` | `normal` \| `talisman` \| `off_hand` \| `armor` | Where the item's stats and effects are active. `normal` (default) = main hand **and** off-hand; `talisman` = passively from anywhere in the inventory; `off_hand` = only while held in the off-hand; `armor` = only while worn. In the editor, setting an armor material auto-selects `armor`. Prefer this over the legacy `talisman` boolean |
+| `talisman` | boolean | LEGACY alias for `type`. `true` == `type: "talisman"`. Still read for backward compatibility; use `type` instead |
 | `stackable` | boolean | If true, the item drops its unique per-item id so identical copies stack together. Use it for consumables and currency like vouchers, crates and coins. Leave it `false` (default) for gear that must stay unique. Stackable items are skipped by dupe detection |
 | `customModelData` | number | Resource-pack model id |
 | `unbreakable` | boolean | If true, the item never loses durability (applied version-safely). Pair with the `HIDE_UNBREAKABLE` flag to hide the tag |
 | `skullOwner` | string | Player name, for `PLAYER_HEAD` skins |
 | `skullTexture` | string | Custom skin for a `PLAYER_HEAD`: a base64 texture value, a texture URL (`http://textures.minecraft.net/texture/...`), or a bare texture hash. Renders as a real inventory item across versions. Leave empty for none |
 | `skullSignature` | string | Optional Mojang signature for `skullTexture` (only needed for signed textures; usually omitted) |
-| `stats` | object[] | Stat modifiers (authored in the editor; preserved on re-import) |
+| `stats` | object[] | Per-item stat values, applied straight from import: `[{ "stat": "<name from stats.yml>", "value": <int> }]`. The stat must already exist in `stats.yml` (see `get_stat_schema`). Render the block in lore with `{stats}` |
 | `actions` | Action[] | The built-in trigger behavior graph (see below) |
 | `customEvents` | object[] | React to ANY Bukkit event by its full class name (see Custom events) |
 | `recipe` | object[] | Optional shaped crafting recipe, up to 9 slots row-major (3x3). `null` for empty slots. Each slot is `{ "material": "DIAMOND", "amount": 1 }` (vanilla) or `{ "item": "custom_item_name", "amount": 1 }` (another custom item). `amount` defaults to 1 and is how many are consumed from that slot, so `amount > 1` is supported. Example: `[{"material":"DIAMOND"},null,null,{"material":"DIAMOND"},null,null,{"material":"STICK"},null,null]` |
 | `attributes` | object[] | Addon attributes applied to the item (reforge stones, PowerScrolls, etc.). Each entry is `{ "addon", "attribute", "value" }`. See Addon attributes |
+| `requirements` | object[] | Use requirements. When set, a player who fails ANY rule cannot use the item at all (no abilities, no attacking, no mining, no stats). See Item requirements |
+| `requirementMessage` | string | Optional message sent (throttled) when a locked player tries to use the item |
+
+## Worked example: leather armour with colour and stats
+
+A dyed leather chestplate that grants stats. `color` dyes the leather, each `stats` entry references a stat already defined in `stats.yml` (check with `get_stat_schema`), and `{stats}` renders the block in lore. No in-game editor step is needed.
+
+```json
+{
+  "name": "ranger_chestplate",
+  "fancyName": "&2Ranger's Tunic",
+  "material": "LEATHER_CHESTPLATE",
+  "color": "#2E8B57",
+  "lore": [
+    "&7A woven tunic of the deep wood.",
+    "",
+    "{stats}"
+  ],
+  "stats": [
+    { "stat": "health", "value": 40 },
+    { "stat": "defense", "value": 25 }
+  ]
+}
+```
+
+Build the other three pieces the same way (`LEATHER_HELMET` / `LEATHER_LEGGINGS` / `LEATHER_BOOTS`) with the same `color` for a matching set. Save each as its own `.import` file and run `/ic import <name>`.
 
 ## Addon attributes
 
@@ -202,6 +230,29 @@ An item can store its own values that travel with that exact item, even when it 
 **Build abilities as nested calls, not code strings.** Prefer the structured `call` form so the ability stays fully editable in the in-game item editor. Do the math with the generic helpers - `core.min`, `core.max`, `core.clamp`, `core.add`, `core.subtract`, `core.multiply`, `core.divide` - instead of `core.runCode`/`doIf`. Example: a nova that scales with a counter but is capped at 10 - damage `core.add(4, core.multiply(core.min(core.getItemVariableNumber(player, "souls"), 10), 0.5))`, then `core.subtractItemVariable(player, "souls", core.min(core.getItemVariableNumber(player, "souls"), 10))` to spend only what was used. The numbers (4, 0.5, 10) are plain literals in the item, editable by the owner.
 
 Upgrade pattern: on the trigger, `core.addItemVariable(player, "kills", 1)`, then `core.doIf` the total reached a threshold to bump a `level` variable, then `core.refreshItemLore(player)`. Block-mining progress uses a `customEvents` entry on `org.bukkit.event.block.BlockBreakEvent`.
+
+## Item requirements
+
+Lock an item behind a requirement so it is unusable until the holder meets it. While a player fails ANY rule the item does **nothing** for them: no abilities, no attacking, no mining, no stats. Add the `requirements` array; each rule is one of:
+
+- **Permission** - `{ "type": "permission", "input": "myserver.vip" }`. Passes when the player has that permission node.
+- **Placeholder** - `{ "type": "placeholder", "input": "%player_level%", "operator": ">=", "value": 10 }`. Resolves the PlaceholderAPI placeholder for the player and compares it. Operators: `>=`, `<=`, `>`, `<`, `==`, `!=` (numeric), `true` / `false` (the value is truthy / falsy), `equals` / `notequals` / `contains` (text). Placeholder rules need PlaceholderAPI installed; an unresolvable placeholder keeps the item locked.
+
+All rules must pass (AND). Show the holder why with the `{requirement:&ctext}` lore placeholder - the text appears only while they fail and disappears once every rule passes. Set `requirementMessage` for a chat nudge when a locked player tries to use the item (sent at most once every 1.5s).
+
+```json
+{
+  "name": "vip_blade",
+  "fancyName": "<gradient:#ffd700:#ff8c00>VIP Blade</gradient>",
+  "material": "DIAMOND_SWORD",
+  "lore": ["&7A blade only the worthy may wield.", "{requirement:&cRequires rank VIP & level 10}"],
+  "requirements": [
+    { "type": "permission", "input": "myserver.vip" },
+    { "type": "placeholder", "input": "%player_level%", "operator": ">=", "value": 10 }
+  ],
+  "requirementMessage": "&cYou do not meet this item's requirements."
+}
+```
 
 ## Item cooldowns
 
