@@ -170,6 +170,30 @@
           "keywords": "add location world shifted amounts position coords place spot"
         },
         {
+          "name": "and",
+          "signature": "core.and(boolean a, boolean b)",
+          "params": [
+            {
+              "name": "a",
+              "type": "boolean",
+              "jvmType": "boolean"
+            },
+            {
+              "name": "b",
+              "type": "boolean",
+              "jvmType": "boolean"
+            }
+          ],
+          "returns": "boolean",
+          "returnsValue": true,
+          "useless": false,
+          "documented": true,
+          "description": "True only when both conditions are true. Use it to combine two checks without writing code.",
+          "category": "Logic",
+          "example": "core.doIf(core.and(core.isStandingStill(player), core.isHealthBelowPercent(player, 0.5)), \"...\")",
+          "keywords": "and both combine condition all two"
+        },
+        {
           "name": "balance",
           "signature": "core.balance(Player player)",
           "params": [
@@ -498,6 +522,40 @@
           "description": "Internal helper that color-codes text and wraps it in a string array.",
           "category": "Java helpers",
           "keywords": "color strings java helpers internal helper codes text wraps string colour rgb hex tint"
+        },
+        {
+          "name": "countNearbyLiving",
+          "signature": "core.countNearbyLiving(Player player, double x, double y, double z)",
+          "params": [
+            {
+              "name": "player",
+              "type": "Player",
+              "jvmType": "org.bukkit.entity.Player"
+            },
+            {
+              "name": "x",
+              "type": "double",
+              "jvmType": "double"
+            },
+            {
+              "name": "y",
+              "type": "double",
+              "jvmType": "double"
+            },
+            {
+              "name": "z",
+              "type": "double",
+              "jvmType": "double"
+            }
+          ],
+          "returns": "int",
+          "returnsValue": true,
+          "useless": false,
+          "documented": true,
+          "description": "Counts the living entities (mobs and players, not yourself) in the x, y, z box around the player. Combine with isAtLeast for a scaling condition.",
+          "category": "Combat",
+          "example": "core.isAtLeast(core.countNearbyLiving(player, 8, 8, 8), 3)",
+          "keywords": "count nearby living entities number how many targets enemies around amount"
         },
         {
           "name": "createAnimation",
@@ -1478,10 +1536,10 @@
           "returnsValue": true,
           "useless": false,
           "documented": true,
-          "description": "Returns how many ticks of vanilla cooldown are left on the player's held item (20 ticks = 1 second), or 0 if it is ready.",
+          "description": "Returns how many ticks of vanilla cooldown are left on the item that triggered this ability (20 ticks = 1 second), or 0 if it is ready.",
           "category": "Items",
           "example": "core.getItemCooldownRemaining(player)",
-          "keywords": "cooldown remaining ticks left item time vanilla"
+          "keywords": "cooldown remaining ticks left item time vanilla armor armour worn"
         },
         {
           "name": "getItemStack",
@@ -2177,10 +2235,44 @@
           "returnsValue": true,
           "useless": false,
           "documented": true,
-          "description": "Returns true while the player's held item is still on a vanilla cooldown from setItemCooldown. Use it to block an action until the cooldown ends.",
+          "description": "Returns true while the item that triggered this ability (held, or the worn armour piece) is still on a vanilla cooldown from setItemCooldown. Use it to block an action until the cooldown ends.",
           "category": "Items",
-          "example": "core.doIf(core.hasItemCooldown(player) == false, \"core.heal(player, 4)\")",
-          "keywords": "cooldown check has item on cooldown ready vanilla"
+          "example": "core.doIf(core.not(core.hasItemCooldown(player)), { steps: [ { call: core.heal, args: [player, 4] } ] })",
+          "keywords": "cooldown check has item on cooldown ready vanilla armor armour worn"
+        },
+        {
+          "name": "hasNearbyLiving",
+          "signature": "core.hasNearbyLiving(Player player, double x, double y, double z)",
+          "params": [
+            {
+              "name": "player",
+              "type": "Player",
+              "jvmType": "org.bukkit.entity.Player"
+            },
+            {
+              "name": "x",
+              "type": "double",
+              "jvmType": "double"
+            },
+            {
+              "name": "y",
+              "type": "double",
+              "jvmType": "double"
+            },
+            {
+              "name": "z",
+              "type": "double",
+              "jvmType": "double"
+            }
+          ],
+          "returns": "boolean",
+          "returnsValue": true,
+          "useless": false,
+          "documented": true,
+          "description": "True when at least one living entity (mob or player, not yourself) is in the x, y, z box around the player. Use it to check for a target before an ability with no code.",
+          "category": "Combat",
+          "example": "core.doIf(core.hasNearbyLiving(player, 10, 10, 10), \"...\")",
+          "keywords": "has nearby living entity target enemy mob present any condition around"
         },
         {
           "name": "hashCode",
@@ -2261,6 +2353,208 @@
           "keywords": "hide player duration players hides everyone visible after number ticks user person"
         },
         {
+          "name": "isAtLeast",
+          "signature": "core.isAtLeast(double a, double b)",
+          "params": [
+            {
+              "name": "a",
+              "type": "double",
+              "jvmType": "double"
+            },
+            {
+              "name": "b",
+              "type": "double",
+              "jvmType": "double"
+            }
+          ],
+          "returns": "boolean",
+          "returnsValue": true,
+          "useless": false,
+          "documented": true,
+          "description": "True when the first number is at least (greater than or equal to) the second.",
+          "category": "Logic",
+          "example": "core.doIf(core.isAtLeast(souls, 1), \"...\")",
+          "keywords": "at least greater equal minimum compare condition number atleast"
+        },
+        {
+          "name": "isAtMost",
+          "signature": "core.isAtMost(double a, double b)",
+          "params": [
+            {
+              "name": "a",
+              "type": "double",
+              "jvmType": "double"
+            },
+            {
+              "name": "b",
+              "type": "double",
+              "jvmType": "double"
+            }
+          ],
+          "returns": "boolean",
+          "returnsValue": true,
+          "useless": false,
+          "documented": true,
+          "description": "True when the first number is at most (less than or equal to) the second.",
+          "category": "Logic",
+          "example": "core.doIf(core.isAtMost(souls, 0), \"...\")",
+          "keywords": "at most less equal maximum compare condition number atmost"
+        },
+        {
+          "name": "isEqual",
+          "signature": "core.isEqual(double a, double b)",
+          "params": [
+            {
+              "name": "a",
+              "type": "double",
+              "jvmType": "double"
+            },
+            {
+              "name": "b",
+              "type": "double",
+              "jvmType": "double"
+            }
+          ],
+          "returns": "boolean",
+          "returnsValue": true,
+          "useless": false,
+          "documented": true,
+          "description": "True when two numbers are equal.",
+          "category": "Logic",
+          "example": "core.doIf(core.isEqual(level, 10), \"...\")",
+          "keywords": "equal equals same compare condition number"
+        },
+        {
+          "name": "isGreater",
+          "signature": "core.isGreater(double a, double b)",
+          "params": [
+            {
+              "name": "a",
+              "type": "double",
+              "jvmType": "double"
+            },
+            {
+              "name": "b",
+              "type": "double",
+              "jvmType": "double"
+            }
+          ],
+          "returns": "boolean",
+          "returnsValue": true,
+          "useless": false,
+          "documented": true,
+          "description": "True when the first number is greater than the second. Use it as a doIf condition instead of writing raw code.",
+          "category": "Logic",
+          "example": "core.doIf(core.isGreater(souls, 5), \"...\")",
+          "keywords": "greater more than bigger compare condition number above"
+        },
+        {
+          "name": "isHealthBelowPercent",
+          "signature": "core.isHealthBelowPercent(Player player, double fraction)",
+          "params": [
+            {
+              "name": "player",
+              "type": "Player",
+              "jvmType": "org.bukkit.entity.Player"
+            },
+            {
+              "name": "fraction",
+              "type": "double",
+              "jvmType": "double"
+            }
+          ],
+          "returns": "boolean",
+          "returnsValue": true,
+          "useless": false,
+          "documented": true,
+          "description": "True when the player's health is below the given fraction of their maximum (0.3 = below 30%). Great for a low-health proc with no code.",
+          "category": "Players",
+          "example": "core.doIf(core.isHealthBelowPercent(player, 0.3), \"...\")",
+          "keywords": "health below percent low hp fraction condition hurt danger threshold"
+        },
+        {
+          "name": "isItemVariableAtLeast",
+          "signature": "core.isItemVariableAtLeast(Player player, String key, double amount)",
+          "params": [
+            {
+              "name": "player",
+              "type": "Player",
+              "jvmType": "org.bukkit.entity.Player"
+            },
+            {
+              "name": "key",
+              "type": "String",
+              "jvmType": "java.lang.String"
+            },
+            {
+              "name": "amount",
+              "type": "double",
+              "jvmType": "double"
+            }
+          ],
+          "returns": "boolean",
+          "returnsValue": true,
+          "useless": false,
+          "documented": true,
+          "description": "True when a numeric value stored on the held item is at least the given amount. Reads with getItemVariableNumber. Use it for a charge or soul counter condition with no code.",
+          "category": "Items",
+          "example": "core.doIf(core.isItemVariableAtLeast(player, \"souls\", 1), \"...\")",
+          "keywords": "item variable at least counter souls charge condition number atleast enough"
+        },
+        {
+          "name": "isItemVariableAtMost",
+          "signature": "core.isItemVariableAtMost(Player player, String key, double amount)",
+          "params": [
+            {
+              "name": "player",
+              "type": "Player",
+              "jvmType": "org.bukkit.entity.Player"
+            },
+            {
+              "name": "key",
+              "type": "String",
+              "jvmType": "java.lang.String"
+            },
+            {
+              "name": "amount",
+              "type": "double",
+              "jvmType": "double"
+            }
+          ],
+          "returns": "boolean",
+          "returnsValue": true,
+          "useless": false,
+          "documented": true,
+          "description": "True when a numeric value stored on the held item is at most the given amount. The mirror of isItemVariableAtLeast, for an empty/low counter condition.",
+          "category": "Items",
+          "example": "core.doIf(core.isItemVariableAtMost(player, \"souls\", 0), \"...\")",
+          "keywords": "item variable at most counter souls empty low condition number atmost"
+        },
+        {
+          "name": "isLess",
+          "signature": "core.isLess(double a, double b)",
+          "params": [
+            {
+              "name": "a",
+              "type": "double",
+              "jvmType": "double"
+            },
+            {
+              "name": "b",
+              "type": "double",
+              "jvmType": "double"
+            }
+          ],
+          "returns": "boolean",
+          "returnsValue": true,
+          "useless": false,
+          "documented": true,
+          "description": "True when the first number is less than the second.",
+          "category": "Logic",
+          "example": "core.doIf(core.isLess(distance, 3), \"...\")",
+          "keywords": "less smaller below under compare condition number"
+        },
+        {
           "name": "isNull",
           "signature": "core.isNull(Object obj)",
           "params": [
@@ -2277,6 +2571,25 @@
           "description": "Internal helper that checks whether a value is empty (null).",
           "category": "Java helpers",
           "keywords": "null java helpers internal helper checks whether empty"
+        },
+        {
+          "name": "isStandingStill",
+          "signature": "core.isStandingStill(Player player)",
+          "params": [
+            {
+              "name": "player",
+              "type": "Player",
+              "jvmType": "org.bukkit.entity.Player"
+            }
+          ],
+          "returns": "boolean",
+          "returnsValue": true,
+          "useless": false,
+          "documented": true,
+          "description": "True when the player is barely moving (standing still). Use it to gate an effect that only runs while still, with no velocity math.",
+          "category": "Players",
+          "example": "core.doIf(core.isStandingStill(player), \"...\")",
+          "keywords": "standing still not moving idle stationary still motionless velocity condition"
         },
         {
           "name": "isTalisman",
@@ -2296,6 +2609,30 @@
           "category": "Items",
           "example": "core.isTalisman(item)",
           "keywords": "talisman checks whether custom passive kept inventory special bag slots storage"
+        },
+        {
+          "name": "isWearingFullSet",
+          "signature": "core.isWearingFullSet(Player player, String idPrefix)",
+          "params": [
+            {
+              "name": "player",
+              "type": "Player",
+              "jvmType": "org.bukkit.entity.Player"
+            },
+            {
+              "name": "idPrefix",
+              "type": "String",
+              "jvmType": "java.lang.String"
+            }
+          ],
+          "returns": "boolean",
+          "returnsValue": true,
+          "useless": false,
+          "documented": true,
+          "description": "True when the player is wearing all four armour pieces of a set, matched by id prefix (e.g. \"spirit\" matches spirit_helmet, spirit_chestplate, spirit_leggings, spirit_boots). Perfect for a full-set bonus condition with no code.",
+          "category": "Items",
+          "example": "core.doIf(core.isWearingFullSet(player, \"spirit\"), \"...\")",
+          "keywords": "wearing full set armor armour bonus four pieces helmet chestplate leggings boots matching suit complete"
         },
         {
           "name": "killEntity",
@@ -2592,6 +2929,25 @@
           "keywords": "player head creates showing skin user person"
         },
         {
+          "name": "not",
+          "signature": "core.not(boolean value)",
+          "params": [
+            {
+              "name": "value",
+              "type": "boolean",
+              "jvmType": "boolean"
+            }
+          ],
+          "returns": "boolean",
+          "returnsValue": true,
+          "useless": false,
+          "documented": true,
+          "description": "Flips a true/false value. Use it to run something when a condition is NOT met.",
+          "category": "Logic",
+          "example": "core.doIf(core.not(core.hasNearbyLiving(player, 10, 10, 10)), \"...\")",
+          "keywords": "not negate flip invert opposite false condition"
+        },
+        {
           "name": "notify",
           "signature": "core.notify()",
           "params": [],
@@ -2625,6 +2981,30 @@
           "category": "Players",
           "example": "core.onlinePlayers()",
           "keywords": "online players currently server"
+        },
+        {
+          "name": "or",
+          "signature": "core.or(boolean a, boolean b)",
+          "params": [
+            {
+              "name": "a",
+              "type": "boolean",
+              "jvmType": "boolean"
+            },
+            {
+              "name": "b",
+              "type": "boolean",
+              "jvmType": "boolean"
+            }
+          ],
+          "returns": "boolean",
+          "returnsValue": true,
+          "useless": false,
+          "documented": true,
+          "description": "True when either condition is true.",
+          "category": "Logic",
+          "example": "core.doIf(core.or(core.chanceOf(20), core.isAtLeast(souls, 10)), \"...\")",
+          "keywords": "or either combine condition any"
         },
         {
           "name": "parsePlaceholder",
@@ -2715,25 +3095,6 @@
         },
         {
           "name": "projectileItem",
-          "signature": "core.projectileItem(ItemStack display)",
-          "params": [
-            {
-              "name": "display",
-              "type": "ItemStack",
-              "jvmType": "org.bukkit.inventory.ItemStack"
-            }
-          ],
-          "returns": "ProjectileItem",
-          "returnsValue": true,
-          "useless": false,
-          "documented": true,
-          "description": "Builds an item projectile body: an invisible armor stand wearing the given item on its head. Pass it as the val of shootProjectile with type ITEM. Chain small(true) for a small stand, visible(true) to show the stand, marker(false) to give it a hitbox, rotation(x, y, z) to tilt the item in degrees, spin(degreesPerTick) to make it spin while it flies, trail(particleDisplay) to leave a particle trail, and trailEvery(ticks) to thin that trail out.",
-          "category": "Projectiles",
-          "example": "core.shootProjectile(player, player.getEyeLocation(), \"ITEM\", core.projectileItem(core.skullOwner(player.getName())).spin(20).trail(particles.colored(255, 80, 0, 1)), 60, true, core.createEquationVector(\"t * 0.4\", \"0\", \"0\"))",
-          "keywords": "projectile projectiles builds body invisible armor stand wearing head pass val shootprojectile type chain"
-        },
-        {
-          "name": "projectileItem",
           "signature": "core.projectileItem(String material)",
           "params": [
             {
@@ -2750,6 +3111,25 @@
           "category": "Projectiles",
           "example": "core.shootProjectile(player, player.getEyeLocation(), \"ITEM\", core.projectileItem(\"STONE\").spin(15), 60, true, core.createEquationVector(\"t * 0.5\", \"0\", \"0\"))",
           "keywords": "projectile projectiles builds body material name handy flinging block chainable styling itemstack version small"
+        },
+        {
+          "name": "projectileItem",
+          "signature": "core.projectileItem(ItemStack display)",
+          "params": [
+            {
+              "name": "display",
+              "type": "ItemStack",
+              "jvmType": "org.bukkit.inventory.ItemStack"
+            }
+          ],
+          "returns": "ProjectileItem",
+          "returnsValue": true,
+          "useless": false,
+          "documented": true,
+          "description": "Builds an item projectile body: an invisible armor stand wearing the given item on its head. Pass it as the val of shootProjectile with type ITEM. Chain small(true) for a small stand, visible(true) to show the stand, marker(false) to give it a hitbox, rotation(x, y, z) to tilt the item in degrees, spin(degreesPerTick) to make it spin while it flies, trail(particleDisplay) to leave a particle trail, and trailEvery(ticks) to thin that trail out.",
+          "category": "Projectiles",
+          "example": "core.shootProjectile(player, player.getEyeLocation(), \"ITEM\", core.projectileItem(core.skullOwner(player.getName())).spin(20).trail(particles.colored(255, 80, 0, 1)), 60, true, core.createEquationVector(\"t * 0.4\", \"0\", \"0\"))",
+          "keywords": "projectile projectiles builds body invisible armor stand wearing head pass val shootprojectile type chain"
         },
         {
           "name": "pullNearbyLiving",
@@ -3199,10 +3579,10 @@
           "returnsValue": false,
           "useless": false,
           "documented": true,
-          "description": "Puts a real vanilla cooldown on the player's held item for the given number of seconds. The item greys out and shows the sweeping cooldown overlay, exactly like an ender pearl. Needs Minecraft 1.11 or newer (older versions ignore it).",
+          "description": "Puts a real vanilla cooldown on the item that triggered this ability (the held item, or the worn armour piece for an armour ability) for the given number of seconds. Held items grey out with the sweeping overlay, exactly like an ender pearl; worn armour cannot show the overlay, so gate armour abilities with the action's own cooldown field instead. Needs Minecraft 1.11 or newer.",
           "category": "Items",
           "example": "core.setItemCooldown(player, 3)",
-          "keywords": "cooldown item vanilla visual timer ender pearl grey sweep delay reuse use"
+          "keywords": "cooldown item vanilla visual timer ender pearl grey sweep delay reuse use armor armour piece worn"
         },
         {
           "name": "setItemVariable",
@@ -3433,6 +3813,54 @@
         },
         {
           "name": "shootProjectile",
+          "signature": "core.shootProjectile(Player player, Location location, String type, Object val, int timeAliveTicks, boolean splashHit, EquationVector equationVector)",
+          "params": [
+            {
+              "name": "player",
+              "type": "Player",
+              "jvmType": "org.bukkit.entity.Player"
+            },
+            {
+              "name": "location",
+              "type": "Location",
+              "jvmType": "org.bukkit.Location"
+            },
+            {
+              "name": "type",
+              "type": "String",
+              "jvmType": "java.lang.String"
+            },
+            {
+              "name": "val",
+              "type": "Object",
+              "jvmType": "java.lang.Object"
+            },
+            {
+              "name": "timeAliveTicks",
+              "type": "int",
+              "jvmType": "int"
+            },
+            {
+              "name": "splashHit",
+              "type": "boolean",
+              "jvmType": "boolean"
+            },
+            {
+              "name": "equationVector",
+              "type": "EquationVector",
+              "jvmType": "me.tastycake.itemscore.item.projectiles.EquationVector"
+            }
+          ],
+          "returns": "void",
+          "returnsValue": false,
+          "useless": true,
+          "documented": true,
+          "description": "Internal legacy string-typed projectile call kept so older items keep working; new items use the ProjectileType enum.",
+          "category": "Java helpers",
+          "keywords": "shoot projectile java helpers internal legacy string typed call kept older keep working projectiletype"
+        },
+        {
+          "name": "shootProjectile",
           "signature": "core.shootProjectile(Player player, Location location, ProjectileType type, Object val, int timeAliveTicks, boolean splashHit, EquationVector equationVector)",
           "params": [
             {
@@ -3479,54 +3907,6 @@
           "category": "Projectiles",
           "example": "core.shootProjectile(player, player.getEyeLocation(), \"PARTICLE\", particles.colored(255, 80, 0, 3), 60, true, core.createEquationVector(\"t * 0.5\", \"0\", \"0\"))",
           "keywords": "shoot fire launch projectile arrow missile spell bullet throw cast beam"
-        },
-        {
-          "name": "shootProjectile",
-          "signature": "core.shootProjectile(Player player, Location location, String type, Object val, int timeAliveTicks, boolean splashHit, EquationVector equationVector)",
-          "params": [
-            {
-              "name": "player",
-              "type": "Player",
-              "jvmType": "org.bukkit.entity.Player"
-            },
-            {
-              "name": "location",
-              "type": "Location",
-              "jvmType": "org.bukkit.Location"
-            },
-            {
-              "name": "type",
-              "type": "String",
-              "jvmType": "java.lang.String"
-            },
-            {
-              "name": "val",
-              "type": "Object",
-              "jvmType": "java.lang.Object"
-            },
-            {
-              "name": "timeAliveTicks",
-              "type": "int",
-              "jvmType": "int"
-            },
-            {
-              "name": "splashHit",
-              "type": "boolean",
-              "jvmType": "boolean"
-            },
-            {
-              "name": "equationVector",
-              "type": "EquationVector",
-              "jvmType": "me.tastycake.itemscore.item.projectiles.EquationVector"
-            }
-          ],
-          "returns": "void",
-          "returnsValue": false,
-          "useless": true,
-          "documented": true,
-          "description": "Internal legacy string-typed projectile call kept so older items keep working; new items use the ProjectileType enum.",
-          "category": "Java helpers",
-          "keywords": "shoot projectile java helpers internal legacy string typed call kept older keep working projectiletype"
         },
         {
           "name": "showPlayer",
@@ -4169,6 +4549,25 @@
           "keywords": "throw island block falling debris launch material meteor skyfall"
         },
         {
+          "name": "toArray",
+          "signature": "core.toArray(Collection collection)",
+          "params": [
+            {
+              "name": "collection",
+              "type": "Collection",
+              "jvmType": "java.util.Collection"
+            }
+          ],
+          "returns": "Object[]",
+          "returnsValue": true,
+          "useless": false,
+          "documented": true,
+          "description": "Turns a list (like getNearbyLivingEntities) into an array so you can pass it straight to loopThrough, with no .toArray() code.",
+          "category": "Loops",
+          "example": "core.loopThrough(body, core.toArray(core.getNearbyLivingEntities(player, 6, 4, 6)), 1)",
+          "keywords": "to array list convert loop through nearby entities collection toarray"
+        },
+        {
           "name": "toClass",
           "signature": "core.toClass(String name)",
           "params": [
@@ -4236,40 +4635,6 @@
         },
         {
           "name": "veinMine",
-          "signature": "core.veinMine(Block start, Item item, int maxBlocks, int maxBox)",
-          "params": [
-            {
-              "name": "start",
-              "type": "Block",
-              "jvmType": "org.bukkit.block.Block"
-            },
-            {
-              "name": "item",
-              "type": "Item",
-              "jvmType": "me.tastycake.itemscore.item.Item"
-            },
-            {
-              "name": "maxBlocks",
-              "type": "int",
-              "jvmType": "int"
-            },
-            {
-              "name": "maxBox",
-              "type": "int",
-              "jvmType": "int"
-            }
-          ],
-          "returns": "int",
-          "returnsValue": true,
-          "useless": false,
-          "documented": true,
-          "description": "Breaks the whole connected vein of blocks around a block you just mined, as if each one was mined with the given item so it drops its loot. Only blocks that share the start block's material are taken, the start block itself is left to whatever broke it, and the search stops at maxBlocks blocks or once the vein spans maxBox blocks across in any direction. Returns how many extra blocks were broken.",
-          "category": "Blocks",
-          "example": "core.veinMine(event.getBlock(), item, 64, 8)",
-          "keywords": "vein miner ore connected flood fill break chain excavate cluster pickaxe mining tunnel"
-        },
-        {
-          "name": "veinMine",
           "signature": "core.veinMine(BlockBreakEvent event, Item item, int maxBlocks, int maxBox)",
           "params": [
             {
@@ -4301,6 +4666,40 @@
           "category": "Blocks",
           "example": "core.veinMine(event, item, 64, 8)",
           "keywords": "vein miner ore connected break event blockbreak chain excavate pickaxe mining"
+        },
+        {
+          "name": "veinMine",
+          "signature": "core.veinMine(Block start, Item item, int maxBlocks, int maxBox)",
+          "params": [
+            {
+              "name": "start",
+              "type": "Block",
+              "jvmType": "org.bukkit.block.Block"
+            },
+            {
+              "name": "item",
+              "type": "Item",
+              "jvmType": "me.tastycake.itemscore.item.Item"
+            },
+            {
+              "name": "maxBlocks",
+              "type": "int",
+              "jvmType": "int"
+            },
+            {
+              "name": "maxBox",
+              "type": "int",
+              "jvmType": "int"
+            }
+          ],
+          "returns": "int",
+          "returnsValue": true,
+          "useless": false,
+          "documented": true,
+          "description": "Breaks the whole connected vein of blocks around a block you just mined, as if each one was mined with the given item so it drops its loot. Only blocks that share the start block's material are taken, the start block itself is left to whatever broke it, and the search stops at maxBlocks blocks or once the vein spans maxBox blocks across in any direction. Returns how many extra blocks were broken.",
+          "category": "Blocks",
+          "example": "core.veinMine(event.getBlock(), item, 64, 8)",
+          "keywords": "vein miner ore connected flood fill break chain excavate cluster pickaxe mining tunnel"
         },
         {
           "name": "wait",
@@ -6024,35 +6423,6 @@
         },
         {
           "name": "playAnimation",
-          "signature": "particles.playAnimation(Player player, String name, int ticks)",
-          "params": [
-            {
-              "name": "player",
-              "type": "Player",
-              "jvmType": "org.bukkit.entity.Player"
-            },
-            {
-              "name": "name",
-              "type": "String",
-              "jvmType": "java.lang.String"
-            },
-            {
-              "name": "ticks",
-              "type": "int",
-              "jvmType": "int"
-            }
-          ],
-          "returns": "void",
-          "returnsValue": false,
-          "useless": false,
-          "documented": true,
-          "description": "Plays a saved animation by name on a player for a number of ticks (20 = 1 second). This is the easy no-code way: build the animation in /ic animations, then just name it here. No core.createAnimation needed.",
-          "category": "Particle animations",
-          "example": "particles.playAnimation(player, \"halo\", 60)",
-          "keywords": "play saved animation name particles player ticks library rune aura halo orbit effect vfx visual named reference no code easy gui"
-        },
-        {
-          "name": "playAnimation",
           "signature": "particles.playAnimation(Player player, ParticleAnimation animation, int ticks)",
           "params": [
             {
@@ -6079,6 +6449,35 @@
           "category": "Particle animations",
           "example": "particles.playAnimation(player, anim, 60)",
           "keywords": "play animation particles player ticks run show rune aura halo orbit effect vfx visual loop frames orientation anchor"
+        },
+        {
+          "name": "playAnimation",
+          "signature": "particles.playAnimation(Player player, String name, int ticks)",
+          "params": [
+            {
+              "name": "player",
+              "type": "Player",
+              "jvmType": "org.bukkit.entity.Player"
+            },
+            {
+              "name": "name",
+              "type": "String",
+              "jvmType": "java.lang.String"
+            },
+            {
+              "name": "ticks",
+              "type": "int",
+              "jvmType": "int"
+            }
+          ],
+          "returns": "void",
+          "returnsValue": false,
+          "useless": false,
+          "documented": true,
+          "description": "Plays a saved animation by name on a player for a number of ticks (20 = 1 second). This is the easy no-code way: build the animation in /ic animations, then just name it here. No core.createAnimation needed.",
+          "category": "Particle animations",
+          "example": "particles.playAnimation(player, \"halo\", 60)",
+          "keywords": "play saved animation name particles player ticks library rune aura halo orbit effect vfx visual named reference no code easy gui"
         },
         {
           "name": "playAnimationAt",
@@ -7344,7 +7743,7 @@
     {
       "name": "leftAction",
       "setter": "setLeftAction",
-      "when": "Player left-clicks while holding the item.",
+      "when": "A player left-clicks while holding the item.",
       "variables": [
         "player",
         "item",
@@ -7354,7 +7753,7 @@
     {
       "name": "leftSAction",
       "setter": "setLeftSAction",
-      "when": "Player sneak + left-clicks while holding the item.",
+      "when": "A player sneaks and left-clicks while holding the item.",
       "variables": [
         "player",
         "item",
@@ -7364,7 +7763,7 @@
     {
       "name": "rightAction",
       "setter": "setRightAction",
-      "when": "Player right-clicks while holding the item.",
+      "when": "A player right-clicks while holding the item.",
       "variables": [
         "player",
         "item",
@@ -7374,7 +7773,7 @@
     {
       "name": "rightSAction",
       "setter": "setRightSAction",
-      "when": "Player sneak + right-clicks while holding the item.",
+      "when": "A player sneaks and right-clicks while holding the item.",
       "variables": [
         "player",
         "item",
@@ -7384,7 +7783,7 @@
     {
       "name": "shiftAction",
       "setter": "setShiftAction",
-      "when": "Player starts sneaking while holding or wearing the item.",
+      "when": "A player starts sneaking while holding or wearing the item.",
       "variables": [
         "player",
         "item",
@@ -7394,7 +7793,37 @@
     {
       "name": "dropAction",
       "setter": "setDropAction",
-      "when": "Player drops the item (the drop is cancelled).",
+      "when": "A player drops the item (the drop is cancelled).",
+      "variables": [
+        "player",
+        "item",
+        "event"
+      ]
+    },
+    {
+      "name": "onItemEquip",
+      "setter": "setOnItemEquip",
+      "when": "A player selects the item in their hotbar.",
+      "variables": [
+        "player",
+        "item",
+        "event"
+      ]
+    },
+    {
+      "name": "armorEquipEvent",
+      "setter": "setArmorEquipEvent",
+      "when": "The item (armor) is put on.",
+      "variables": [
+        "player",
+        "item",
+        "event"
+      ]
+    },
+    {
+      "name": "armorUnEquipEvent",
+      "setter": "setArmorUnEquipEvent",
+      "when": "The item (armor) is taken off.",
       "variables": [
         "player",
         "item",
@@ -7404,7 +7833,7 @@
     {
       "name": "swapAction",
       "setter": "setSwapAction",
-      "when": "Player swaps hands (F key) with the item.",
+      "when": "A player swaps hands (F key) with the item.",
       "variables": [
         "player",
         "item",
@@ -7414,7 +7843,7 @@
     {
       "name": "shootAction",
       "setter": "setShootAction",
-      "when": "Player shoots a projectile while holding the item.",
+      "when": "A player shoots a projectile while holding the item.",
       "variables": [
         "shooter",
         "item",
@@ -7424,7 +7853,7 @@
     {
       "name": "pickupAction",
       "setter": "setPickupAction",
-      "when": "Player picks up the item.",
+      "when": "A player picks the item up off the ground.",
       "variables": [
         "player",
         "item",
@@ -7444,9 +7873,9 @@
       ]
     },
     {
-      "name": "armorEquipEvent",
-      "setter": "setArmorEquipEvent",
-      "when": "The item (armor) is equipped.",
+      "name": "onConsumeAction",
+      "setter": "setOnConsumeAction",
+      "when": "A player finishes eating or drinking the item.",
       "variables": [
         "player",
         "item",
@@ -7454,32 +7883,15 @@
       ]
     },
     {
-      "name": "armorUnEquipEvent",
-      "setter": "setArmorUnEquipEvent",
-      "when": "The item (armor) is unequipped.",
+      "name": "damageEvent",
+      "setter": "setDamageEvent",
+      "when": "You hit something while holding this item (the on-attack trigger). Use the variable 'attacker' for yourself (the holder) and 'victim' for what you hit - there is NO 'player' variable here.",
       "variables": [
-        "player",
+        "attacker",
+        "victim",
         "item",
-        "event"
-      ]
-    },
-    {
-      "name": "playerMoveEvent",
-      "setter": "setPlayerMoveEvent",
-      "when": "Player moves while holding or wearing the item.",
-      "variables": [
-        "player",
-        "item",
-        "event"
-      ]
-    },
-    {
-      "name": "playerDamageEvent",
-      "setter": "setPlayerDamageEvent",
-      "when": "Player holding or wearing the item takes damage.",
-      "variables": [
-        "player",
-        "item",
+        "cause",
+        "damage",
         "event"
       ]
     },
@@ -7507,12 +7919,36 @@
       ]
     },
     {
-      "name": "intervalAction",
-      "setter": "setIntervalAction",
-      "when": "Runs every 'interval' ticks while the item is held or worn (set the action's interval; 20 ticks = 1s). Used for passive effects and for rune-skin particles.",
+      "name": "playerMoveEvent",
+      "setter": "setPlayerMoveEvent",
+      "when": "A player moves while holding or wearing the item.",
       "variables": [
         "player",
-        "item"
+        "item",
+        "event"
+      ]
+    },
+    {
+      "name": "playerDamageEvent",
+      "setter": "setPlayerDamageEvent",
+      "when": "The holder or wearer of this item takes damage. 'player' is the one being hurt; 'cause' / 'causeName' is the damage cause and 'damage' is the amount.",
+      "variables": [
+        "player",
+        "item",
+        "cause",
+        "causeName",
+        "damage",
+        "event"
+      ]
+    },
+    {
+      "name": "intervalAction",
+      "setter": "setIntervalAction",
+      "when": "Runs again and again on a timer (set the period in ticks, 20 = 1s) for as long as the item is held or worn. Great for auras, passive particles, or keeping a potion effect topped up.",
+      "variables": [
+        "player",
+        "item",
+        "event"
       ]
     }
   ],

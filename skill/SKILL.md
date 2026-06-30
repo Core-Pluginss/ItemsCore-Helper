@@ -205,6 +205,8 @@ Call `list_commands` for the full list. The ones you use most:
 | `/recipe [search]` | Player recipe book: browse custom-item crafting recipes (available to everyone) |
 | `/equipment [player]` | EquipmentCore addon: open the equipment menu of extra wearable slots (works like armour while equipped); aliases `/eq`, `/equip` |
 | `/ic equipment` | EquipmentCore admin menu (when installed): settings, types, slots, custom items/buttons, and the menu layout editor |
+| `/profile [player]` | ProfileCore addon: open a player's profile (armor, equipment, held item, off-hand on supported versions, live head with `{stats}` / `{stat_<name>}` / PlaceholderAPI lore); right-click a player or use the command; alias `/prof`. `profilecore.command` (default true) gates the command |
+| `/ic profile` | ProfileCore admin menu (when installed): title, rows, filler, live-refresh, right-click toggle, profile head name/lore, layout (armor/held/off-hand/injection slots) and custom buttons |
 
 ## When in doubt
 

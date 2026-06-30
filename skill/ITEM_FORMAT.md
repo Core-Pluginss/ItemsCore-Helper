@@ -611,7 +611,7 @@ Always confirm a method's exact name and parameters with `get_method` / `search_
       "trigger": "leftAction",
       "needBlock": "BOTH",
       "steps": [
-        { "call": "core.doIf", "args": [ { "call": "core.chanceOf", "args": [25] }, "core.summonLightningByLocation(player.getLocation())" ], "operatorToNext": "END" }
+        { "call": "core.doIf", "args": [ { "call": "core.chanceOf", "args": [25] }, { "steps": [ { "call": "core.summonLightningByLocation", "args": [ { "call": "player.getLocation", "args": [] } ] } ] } ], "operatorToNext": "END" }
       ]
     }
   ],
@@ -619,7 +619,38 @@ Always confirm a method's exact name and parameters with `get_method` / `search_
 }
 ```
 
-Note on `core.doIf(boolean condition, String action)`: the second argument is a short string of script that runs only when the condition is true. Keep that string to a single statement and use methods you have verified exist. For multi-step conditional logic, run several `doIf` steps.
+### Conditions and structured bodies (IMPORTANT - keep items GUI-editable)
+
+Every item must open in the in-game `/itemeditor` as visual method tiles, never an opaque "script code" block. So:
+
+- **The body of `core.doIf` / `core.doIfElse` / `core.loopThrough` is a structured `{ "steps": [ ... ] }` object**, not a string of code. Each step is a normal `{ "call", "args" }`. The plugin imports it as an editable nested action. Inside a `loopThrough` body the current element is the variable `currentArrayObject`.
+- **The condition of `doIf` / `doIfElse` is a SINGLE boolean method**, e.g. `core.chanceOf`, `core.hasId`, `core.isWearingFullSet(player, "spirit")`, `core.isItemVariableAtLeast(player, "souls", 1)`, `core.isHealthBelowPercent(player, 0.3)`, `core.isStandingStill(player)`, `core.hasNearbyLiving(player, 10, 10, 10)`, or a comparison `core.isGreater/isLess/isAtLeast/isAtMost/isEqual(a, b)` and combinators `core.and/or/not(...)`. If no method exists for the check you need, ask for one to be added - do NOT fall back to raw code.
+- **Numeric arguments are built from nested math methods** (`core.add/subtract/multiply/divide/min/max/clamp`), e.g. `core.add(8, core.multiply(core.min(core.getItemVariableNumber(player, "souls"), 10), 6))`.
+- **Pass a list to `loopThrough` with `core.toArray(...)`**, e.g. `core.toArray(core.getNearbyLivingEntities(player, 6, 4, 6))`.
+- **NEVER use `{ "expr": "..." }` or a raw code string for a body or argument.** They import as an un-editable "script code" tile that empties when a player clicks it, which defeats the whole point of the editor. A `{ "call": ... }` or `{ "steps": ... }` always renders as editable tiles.
+
+Example - a scaling, fully editable conditional:
+
+```json
+{ "call": "core.doIfElse", "args": [
+  { "call": "core.isItemVariableAtLeast", "args": [ { "var": "player" }, "souls", 1 ] },
+  { "steps": [
+    { "call": "core.splashDamage", "args": [ { "var": "player" }, { "call": "core.add", "args": [ 8, { "call": "core.multiply", "args": [ { "call": "core.min", "args": [ { "call": "core.getItemVariableNumber", "args": [ { "var": "player" }, "souls" ] }, 10 ] }, 6 ] } ] }, 4, 4, 4 ] }
+  ] },
+  { "steps": [
+    { "call": "core.sendColorMessage", "args": [ { "var": "player" }, "&7No souls to spend." ] }
+  ] }
+] }
+```
+
+### Named particle animations (the cool-effect path)
+
+Build animations in `/ic animations` (or ship `plugins/ItemsCore/animations/<name>.yml`) and fire them from an action by name - one clean, editable call, and the animation stays editable in the GUI:
+
+- `particles.playAnimation(player, "spirit_nova", 36)` - plays the named animation on the player for N ticks.
+- `particles.playAnimationAt(location, "soul_wisp", 12)` - plays it at a location (e.g. `{ "call": "victim.getLocation", "args": [] }`).
+
+Prefer named animations over a long chain of raw `particles.*` calls for ability effects.
 
 ## Before you deliver
 
