@@ -12,7 +12,7 @@ This is the offline reference for the item format ItemsCore imports. When the li
 | `material` | string, required | Bukkit material (e.g. `DIAMOND_SWORD`, `BLAZE_ROD`, `PLAYER_HEAD`) |
 | `color` | string | Leather armour dye as `#RRGGBB` hex (e.g. `#1ABC9C`). Applies **only** to `LEATHER_HELMET`/`CHESTPLATE`/`LEGGINGS`/`BOOTS`; ignored on other materials. Round-trips through `/ic export` |
 | `needBlock` | `BOTH` \| `AIR` \| `BLOCK` | Default interaction context for the item |
-| `lore` | string[] | Lore lines. Support `&` color codes, `&#RRGGBB` hex, MiniMessage tags, `%placeholders%`, `{var_KEY}` item variables, `{stats}`, and `{requirement:&ctext}` (shows only while the holder fails the item's requirements) |
+| `lore` | string[] | Lore lines. Support `&` color codes, `&#RRGGBB` hex, MiniMessage tags, `%placeholders%`, `{var_KEY}` item variables, `{stats}`, `{rarity}` (the item's rarity display text), `{applied_skin}` (one line per cosmetic skin/rune applied in the Advanced Anvil; nothing when none; provided by the SkinsCore addon), and `{requirement:&ctext}` (shows only while the holder fails the item's requirements) |
 | `enchantments` | `{ name, level }[]` | e.g. `{ "name": "DAMAGE_ALL", "level": 3 }` |
 | `flags` | string[] | Bukkit ItemFlag names (e.g. `HIDE_ATTRIBUTES`) |
 | `type` | `normal` \| `talisman` \| `off_hand` \| `armor` | Where the item's stats and effects are active. `normal` (default) = main hand **and** off-hand; `talisman` = passively from anywhere in the inventory; `off_hand` = only while held in the off-hand; `armor` = only while worn. In the editor, setting an armor material auto-selects `armor`. Prefer this over the legacy `talisman` boolean |
@@ -30,6 +30,8 @@ This is the offline reference for the item format ItemsCore imports. When the li
 | `attributes` | object[] | Addon attributes applied to the item (reforge stones, PowerScrolls, etc.). Each entry is `{ "addon", "attribute", "value" }`. See Addon attributes |
 | `requirements` | object[] | Use requirements. When set, a player who fails ANY rule cannot use the item at all (no abilities, no attacking, no mining, no stats). See Item requirements |
 | `requirementMessage` | string | Optional message sent (throttled) when a locked player tries to use the item |
+| `rarity` | string | The id of a rarity defined via `/ic rarities` (e.g. `legendary`). Shown in lore with the `{rarity}` placeholder, and for ReforgesCore it scales a reforge's stat and cost multipliers. Round-trips through `/ic export`. Leave empty for none. See Item rarity |
+| `skin` | object | Makes this item a **cosmetic skin** applied to other items in the Advanced Anvil (not worn/held itself; only its `intervalAction` runs, for rune particles). `dye` recolors armour as leather, `head` swaps a helmet for a textured head, `rune` only adds particles. See Skins. **Requires the SkinsCore addon** (the block is ignored on import if it is not installed) |
 
 ## Worked example: leather armour with colour and stats
 
@@ -78,6 +80,7 @@ Known addon attributes:
 | `ReforgesCore` | `Reforge stone` | reforge name (string) | Turns the item into a stone that applies that reforge in the Anvil (`/advancedreforge`) menu. The reforge must already exist (`/reforges`) |
 | `ReforgesCore` | `Unreforgeable` | `true` | Item can never be reforged |
 | `PowerScrolls` | `Is a scroll` | `true` | Turns the item into a PowerScroll used to upgrade other items |
+| `Equipment` | `type` | type id (string) | Makes the item wearable equipment of that type (e.g. `necklace`, `cloak`, `belt`, `gloves`, `bracelet`). Worn in the `/equipment` menu in a slot that accepts the type; contributes its stats and equip/unequip abilities only while equipped (like armour). Pair with `type: "armor"`. Requires the EquipmentCore addon |
 
 Re-importing over an existing item **merges** attributes: it overwrites the one you name and keeps the others. Only the named addon needs to be installed for its attribute to take effect.
 
@@ -253,6 +256,228 @@ All rules must pass (AND). Show the holder why with the `{requirement:&ctext}` l
   "requirementMessage": "&cYou do not meet this item's requirements."
 }
 ```
+
+## Item rarity
+
+Tag an item with a rarity to colour it and (with ReforgesCore) scale its reforges. Rarities are defined server-side via `/ic rarities` - each has a display text, an order, a stat multiplier and a cost multiplier. Set the item's `rarity` field to a rarity id, then show it in lore with the `{rarity}` placeholder (it expands to that rarity's display text):
+
+```json
+{
+  "name": "dragon_blade",
+  "fancyName": "&cDragon Blade",
+  "material": "NETHERITE_SWORD",
+  "rarity": "legendary",
+  "lore": ["{rarity}", "", "&7Forged in dragonfire.", "", "{stats}"],
+  "stats": [{ "stat": "strength", "value": 120 }]
+}
+```
+
+The rarity id must exist (create it with `/ic rarities`). When ReforgesCore reforges the item, the rarity's stat and cost multipliers apply. `rarity` round-trips through `/ic export`.
+
+## Skins
+
+Skins are provided by the **SkinsCore addon** (a separate plugin jar alongside ItemsCore). The `skin` block below is only applied when SkinsCore is installed; without it the block is ignored on import. Authoring is the same whether you write the `skin` block here or use the **Skin** tile in the SkinsCore section of `/itemeditor` - both store the same definition.
+
+A **skin** is a cosmetic item that a player applies to *another* item in the Advanced Anvil (`/advancedanvil`). The skin item is consumed, and the target item takes on the skin's look. A skin is authored like any normal item (name, material, lore, even an `intervalAction`) plus a `skin` block. Once it has a `skin` block the item is never worn or held for gameplay - **all of its own abilities are ignored except its `intervalAction`** (used for rune particles), and it shows up as a modifier in the anvil.
+
+Three types:
+
+- **`dye`** - recolors the target armour piece as leather and sets its colour. Optionally animates a gradient between two colours while the piece is worn.
+- **`head`** - replaces a helmet with a textured player head. Optionally animates between several textures (frames) while worn.
+- **`rune`** - does not change the item at all; it only adds particles around the wearer while the target armor is **worn** (runes apply only to armor, a worn-only category, so a runed piece never animates while merely held). Author the particles with the rich **`animation`** block (recommended - see Rune animations) or, as an escape hatch, the skin item's `intervalAction`. A rune is **additive**: an item can carry one `dye`/`head` skin AND one `rune` at the same time. Applying another of the same kind overrides the previous one.
+
+The `skin` block:
+
+| Field | Type | Notes |
+|---|---|---|
+| `type` | `dye` \| `head` \| `rune` | Default `dye` |
+| `target` | object | Which items the skin may be applied to (see below). Defaults to all armour |
+| `color1` | string | **dye** - base leather colour `#RRGGBB` (default `#FFFFFF`) |
+| `color2` | string | **dye** - optional second colour; when set, a worn piece animates a gradient `color1`↔`color2`. Empty = solid |
+| `gradientPeriodTicks` | number | **dye** - ticks for one full gradient cycle while worn (min 2, default 40) |
+| `pieceOffsetTicks` | number | **dye** - per-piece phase offset so a worn set flows instead of pulsing together (default 5) |
+| `frames` | object[] | **head** - texture frames `{ "texture", "signature"?, "delayTicks" }`; more than one animates the head while worn. `texture` is a base64 value, URL, or bare hash (same as `skullTexture`) |
+| `prefixOverride` | string | Optional display-name prefix shown before the item name (and before any reforge prefix). Defaults to the flower icon (config `skins.applied-icon`, default `✿`) |
+| `prefixColorOverride` | string | Optional `&` colour for the prefix; defaults to the item name's leading colour |
+| `loreFormat` | string | The `{applied_skin}` line this skin renders on the item it is applied to. Tokens: `%displayName%`, `%displayNameColor%`, `%type%`. Type any icon directly in the text - the default already includes `✿`. Default `%displayNameColor%✿ %displayName% applied` |
+| `price` | number | Vault cost to apply this skin in the anvil. `-1` inherits the server default (config `skins.default-price`) |
+| `animation` | object | **rune** - a built-in, orientation-aware particle animation played around the wearer: stacked shape layers with a frame clock, colours and motion. The recommended way to author rune effects (far richer than an `intervalAction`). See **Rune animations** below |
+
+`target` modes:
+
+- `{ "mode": "all_armor" }` - any armour piece (default).
+- `{ "mode": "by_piece", "pieces": ["HELMET", "BOOTS"] }` - only those armour slots (`HELMET` / `CHESTPLATE` / `LEGGINGS` / `BOOTS`; a head/skull counts as `HELMET`).
+- `{ "mode": "by_material", "materials": ["LEATHER", "PLAYER_HEAD"] }` - material names or family keywords (`LEATHER` matches every leather piece).
+- `{ "mode": "by_id", "ids": ["dragon_blade"] }` - only those custom ItemsCore items, by internal name.
+
+Regardless of `target`, a skin can only be applied to an **Armor**-type custom item (a real armour piece, or an item whose item-type is Armor). Equipment-type items, talismans, off-hand and normal items are always rejected in the anvil.
+
+Show the applied skin in the *target* item's lore with the `{applied_skin}` placeholder - it expands to one line per applied cosmetic (skin and/or rune), or nothing when the item has none.
+
+A dye skin that recolors any leather armour with a worn red↔gold gradient:
+
+```json
+{
+  "name": "ember_dye",
+  "fancyName": "&cEmber Dye",
+  "material": "LEATHER_CHESTPLATE",
+  "lore": ["&7Apply in the anvil to recolor", "&7any leather armour piece."],
+  "skin": {
+    "type": "dye",
+    "target": { "mode": "by_material", "materials": ["LEATHER"] },
+    "color1": "#FF3030",
+    "color2": "#FFC030",
+    "gradientPeriodTicks": 40,
+    "pieceOffsetTicks": 5,
+    "price": 2500
+  }
+}
+```
+
+A head skin that turns any helmet into a textured head:
+
+```json
+{
+  "name": "pumpkin_skin",
+  "fancyName": "&6Jack o' Skin",
+  "material": "PLAYER_HEAD",
+  "lore": ["&7Apply in the anvil to any helmet."],
+  "skin": {
+    "type": "head",
+    "target": { "mode": "by_piece", "pieces": ["HELMET"] },
+    "frames": [
+      { "texture": "eyJ0ZXh0dXJlcyI6...", "delayTicks": 10 }
+    ],
+    "price": 4000
+  }
+}
+```
+
+A rune skin that adds particles while the target is worn (its `intervalAction` runs on the wearer):
+
+```json
+{
+  "name": "flame_rune",
+  "fancyName": "&cFlame Rune",
+  "material": "BLAZE_POWDER",
+  "lore": ["&7Apply in the anvil to add", "&7a flame aura while worn."],
+  "skin": { "type": "rune", "target": { "mode": "all_armor" }, "price": 5000 },
+  "actions": [
+    { "trigger": "intervalAction", "interval": 5, "steps": [
+      { "call": "particles.circle", "args": [0.8, 0.8, 1, 30, 1, { "call": "particles.withLocation", "args": [ { "call": "particles.of", "args": ["FLAME"] }, { "call": "player.getLocation", "args": [] } ] } ] }
+    ] }
+  ]
+}
+```
+
+### Rune animations
+
+A `rune` skin can carry an **`animation`** - a built-in particle effect that plays around the wearer every frame, with a real frame clock so it actually moves (spins, travels, pulses, cycles colour). This is the recommended way to author runes; the raw `intervalAction` still runs only when there is no `animation`, as an advanced escape hatch. The same engine and editor power the in-game **Particle animation** button in the rune's Skin tile, so a `.import` and a GUI edit are interchangeable. Particles are real world particles, visible to the wearer and to everyone nearby.
+
+**Reusable named animations (no code).** The exact same animation engine is also a standalone library. An admin builds a named animation entirely in the GUI with `/ic animations` (a categorized shape picker, stacked layers, colours and a live "Test on me"), and it is saved to `plugins/ItemsCore/animations/`. Any item action can then play it by name - `particles.playAnimation(player, "name", ticks)`, or at a fixed point `particles.playAnimationAt(loc, "name", ticks)` - with no animation code at all. Building one inline with `core.createAnimation()` + `core.createAnimationLayer()` stays available as the scripting escape hatch, but referencing a saved animation by name is the simpler path and the one to prefer.
+
+```json
+"animation": {
+  "orientation": "yaw",
+  "anchor": "above_head",
+  "speed": 1.0,
+  "period": 2,
+  "layers": [
+    { "shape": "circle", "particle": "FLAME", "radius": 0.6, "count": 22, "spin": 5 }
+  ]
+}
+```
+
+The animation:
+
+| Field | Type | Notes |
+|---|---|---|
+| `orientation` | `world` \| `yaw` \| `look` | How the shape follows the player's view. `world` = fixed to the world; `yaw` (default) = turns with the player but stays upright (a halo that spins with you); `look` = tilts fully to wherever the player looks |
+| `anchor` | `feet` \| `body` \| `eyes` \| `above_head` | Where it is centred on the wearer. Default `body` |
+| `speed` | number | How fast the whole animation evolves (the frame-clock rate). Default `1.0` |
+| `period` | number | Render a frame every N ticks. Higher = fewer particles and less lag. Default `1` |
+| `layers` | object[] | One or more stacked shape layers (below). An empty list means no animation |
+
+Each layer:
+
+| Field | Type | Notes |
+|---|---|---|
+| `shape` | string | The form (see Shapes). Default `circle` |
+| `particle` | string | Named particle (e.g. `FLAME`, `SOUL_FIRE_FLAME`, `END_ROD`). Used when no colour is set. Default `FLAME` |
+| `color1` | string | `#RRGGBB` for a coloured dust. When set it overrides `particle` |
+| `color2` | string | Second `#RRGGBB`; with `pulse` the dust fades `color1`↔`color2` |
+| `colorMode` | `auto` \| `solid` \| `pulse` \| `rainbow` | `auto` (default) picks from the colours set (none = particle, one = solid, two = pulse); `rainbow` is a per-point hue sweep (a real rainbow ring) and ignores the colours |
+| `size` | number | Dust size (coloured layers only). Default `1.0` |
+| `radius` | number | Overall size of the shape. Default `1.0` |
+| `count` | number | How many particles make up the shape. Default `24` |
+| `height` | number | Vertical size, for shapes that use it. Default `1.0` |
+| `p1`, `p2`, `p3` | number | Per-shape knobs - see the Shapes table for what each one means |
+| `spin` | number | Degrees the shape rotates each frame (negative spins the other way) |
+| `speed` | number | This layer's own time rate, multiplied by the animation `speed`. Default `1.0` |
+| `phase` | number | Starting offset around the shape (radians) |
+| `offset` | [x, y, z] | Local offset of the layer from the anchor |
+| `x`, `y`, `z` | string | **equation shape only** - a formula per axis (below) |
+
+**Shapes** (and what each reads from `radius`/`height`/`p1`/`p2`/`p3`):
+
+| Shape | Uses | p1 | p2 | p3 |
+|---|---|---|---|---|
+| `circle` | radius, count | - | - | - |
+| `ring` | radius, count (stands upright) | - | - | - |
+| `helix` | radius, height, count | turns | strands | - |
+| `spiral` | radius, count | turns | - | - |
+| `wave` | radius = width, height = amplitude, count | waves | - | - |
+| `polygon` | radius, count | sides | - | - |
+| `star` | radius, count | points | inner size 0-1 | - |
+| `rose` | radius, count | petals | - | - |
+| `heart` | radius, count | - | - | - |
+| `infinity` | radius, count | - | - | - |
+| `lissajous` | radius, height, count | freq X | freq Y | freq Z |
+| `sphere` | radius, count | - | - | - |
+| `torus` | radius = ring, height = tube, count | loops | coils | - |
+| `cone` | radius, height, count | turns | - | - |
+| `vortex` | radius, height, count | turns | - | - |
+| `atom` | radius, count | - | - | - |
+| `galaxy` | radius, count | arms | twist | - |
+| `line` | height = length, count | - | - | - |
+| `point` | offset | - | - | - |
+| `equation` | count, x/y/z formulas | - | - | - |
+
+**Equation shape** - set `x`, `y`, `z` to a formula evaluated for every point. Local axes: `x` = right, `y` = up, `z` = forward. Variables: `t` (frame time), `i` (point index `0..count-1`), `n` (count). Constants `pi`, `e`; maths `+ - * / ( )` and `sin cos tan`. Spread points evenly with `i / n * 2 * pi`. Example - a wavy rotating ring of END_ROD:
+
+```json
+{ "shape": "equation", "particle": "END_ROD", "count": 36,
+  "x": "cos(i / n * 2 * pi + t * 0.05) * 1.1",
+  "y": "sin(i / n * 2 * pi * 2) * 0.5",
+  "z": "sin(i / n * 2 * pi + t * 0.05) * 1.1" }
+```
+
+A complete rune that spins a rainbow halo above the wearer's head:
+
+```json
+{
+  "name": "prism_halo_rune",
+  "fancyName": "&dPrism Halo",
+  "material": "PRISMARINE_CRYSTALS",
+  "lore": ["&7Apply in the anvil to crown", "&7the wearer with a rainbow halo."],
+  "skin": {
+    "type": "rune",
+    "target": { "mode": "all_armor" },
+    "price": 14000,
+    "animation": {
+      "orientation": "yaw",
+      "anchor": "above_head",
+      "speed": 1.0,
+      "period": 2,
+      "layers": [
+        { "shape": "circle", "colorMode": "rainbow", "radius": 0.6, "count": 30, "size": 1.1, "spin": 3 }
+      ]
+    }
+  }
+}
+```
+
+To keep a skin from being undone by vanilla, an admin can block vanilla cosmetic edits on custom items with `/ic cosmetics` (config `block-vanilla-cosmetics`): leather dyeing, cauldron washing, armor trims, and banner/firework/shield combining. Every option is off (allowed) by default, the `all` master blocks them all at once, and only custom ItemsCore items are affected.
 
 ## Item cooldowns
 

@@ -1,0 +1,20 @@
+{
+  "name": "ember_dye",
+  "fancyName": "&cEmber Dye",
+  "material": "LEATHER_CHESTPLATE",
+  "lore": [
+    "&7Apply in the anvil to recolor any",
+    "&7leather armour with a living gradient.",
+    "",
+    "{applied_skin}"
+  ],
+  "skin": {
+    "type": "dye",
+    "target": { "mode": "by_material", "materials": ["LEATHER"] },
+    "color1": "#FF3030",
+    "color2": "#FFC030",
+    "gradientPeriodTicks": 40,
+    "pieceOffsetTicks": 5,
+    "price": 2500
+  }
+}

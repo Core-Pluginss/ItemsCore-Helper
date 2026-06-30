@@ -1,0 +1,25 @@
+{
+  "name": "flame_rune",
+  "fancyName": "&cFlame Rune",
+  "material": "BLAZE_POWDER",
+  "lore": [
+    "&7Apply in the anvil to wrap the",
+    "&7wearer in a ring of flame.",
+    "",
+    "{applied_skin}"
+  ],
+  "skin": {
+    "type": "rune",
+    "target": { "mode": "all_armor" },
+    "price": 5000
+  },
+  "actions": [
+    {
+      "trigger": "intervalAction",
+      "interval": 5,
+      "steps": [
+        { "call": "particles.circle", "args": [0.8, 0.8, 1, 30, 1, { "call": "particles.withLocation", "args": [ { "call": "particles.of", "args": ["FLAME"] }, { "call": "player.getLocation", "args": [] } ] } ] }
+      ]
+    }
+  ]
+}

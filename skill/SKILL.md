@@ -93,6 +93,8 @@ Advanced item features (full details and worked examples in `ITEM_FORMAT.md`):
 - **Leather armour colour:** set `color` to a `#RRGGBB` hex to dye `LEATHER_*` armour. Use the same colour across helmet/chestplate/leggings/boots for a matching set.
 - **Item type (where it works):** `type` controls where the item's stats and effects are active - `"normal"` (hand + off-hand, the default), `"talisman"` (passive from anywhere in the inventory), `"off_hand"` (only in the off-hand), or `"armor"` (only while worn). Set `"armor"` for custom armour and for player-head helmets so reforges/wardrobe treat them as armour. The old `talisman: true` boolean still works and equals `type: "talisman"`.
 - **MiniMessage names and lore:** `fancyName` and `lore` accept MiniMessage tags (`<gradient>`, `<rainbow>`, `<#hex>`, `<bold>`) alongside `&` codes; gradients and hex render fully on 1.16+ and downsample to the nearest colours on older versions.
+- **Rarity:** set `rarity` to a rarity id (created server-side via `/ic rarities`) to tag the item; show it in lore with the `{rarity}` placeholder. With ReforgesCore, the rarity scales a reforge's stat and cost multipliers.
+- **Cosmetic skins (SkinsCore addon):** add a `skin` block to turn an item into a skin players apply to *other* items in the Advanced Anvil (`/advancedanvil`). `dye` recolors armour as leather (optional worn gradient), `head` swaps a helmet for a textured head (optional worn frames), `rune` only adds particles (from the item's `intervalAction`) and stacks on top of a dye/head. Target by all-armour / piece / material / id. Show it on the target with the `{applied_skin}` lore placeholder. Requires the **SkinsCore** addon installed (the `skin` block and `{applied_skin}` only work with it; the block is ignored on import otherwise). Admins can stop vanilla from undoing skins with `/ic cosmetics`. See ITEM_FORMAT.md > Skins.
 
 Find the exact method you need with `search_methods` / `get_method` before using it. Do not invent method names.
 
@@ -115,6 +117,15 @@ Some features come from ItemsCore **addons** (separate plugins) that attach **at
   }
   ```
 - **Unreforgeable (ReforgesCore)** - `{ "addon": "ReforgesCore", "attribute": "Unreforgeable", "value": true }` blocks the item from ever being reforged.
+- **Equipment piece (EquipmentCore)** - makes the item wearable equipment of a given type. It is worn in the `/equipment` menu in a slot that accepts that type and, like armour, contributes its stats and equip/unequip abilities ONLY while equipped. Use a type id the server defined in EquipmentCore (e.g. `necklace`, `cloak`, `belt`, `gloves`, `bracelet`). Pair it with `"type": "armor"` so the piece never gives its stats while merely held or sitting in the inventory.
+  ```json
+  {
+    "name": "vampire_necklace", "fancyName": "&cVampire Necklace", "material": "NETHER_STAR",
+    "type": "armor",
+    "attributes": [ { "addon": "Equipment", "attribute": "type", "value": "necklace" } ],
+    "stats": [ { "stat": "Health", "value": 50 } ]
+  }
+  ```
 
 Values are strings for text attributes (like the reforge name) and `true`/`false` for toggles. Importing over an existing item merges attributes in: it overwrites the named one and keeps the rest. `/ic export <item>` writes the item's attributes too, so you can export, tweak, and re-import. Only the named addon needs to be installed for its attribute to do anything in-game.
 
@@ -179,13 +190,21 @@ Call `list_commands` for the full list. The ones you use most:
 |---|---|
 | `/ic import <file>` | Import a clean JSON from `plugins/ItemsCore/imports/` (live + GUI-editable) |
 | `/ic export <item>` | Write an existing item to `plugins/ItemsCore/exports/<item>.import` |
+| `/ic give <player> <item> [amount]` | Give a custom item to an online player (now) or offline player (queued, delivered on join, silently). Non-stackable copies each get a fresh id. Console-friendly |
 | `/ic adopt <item>` | Make a legacy code-only item GUI-editable |
 | `/ic reload [items\|stats] [name]` | Reload everything, a whole category, or one item/stat |
 | `/ic install <item\|template\|stat\|addon> <url\|name>` | Download content from a URL, or browse/install addons |
 | `/ic exportapi` | Regenerate `plugins/ItemsCore/itemscore-api.json` (the API manifest) |
 | `/itemeditor <item>` | Open the visual editor for an item |
 | `/stats` | Create, edit and delete stats (or edit `stats.yml` + `/ic reload stats`) |
-| `/addons` | Manage installed ItemsCore addons |
+| `/ic rarities` | Manage rarities (display, order, stat & cost multipliers); items reference one via the `rarity` field and `{rarity}` lore |
+| `/ic animations` | Build named particle animations in the GUI (shape picker, layers, colours, live test); play any from an item action with `particles.playAnimation(player, "name", ticks)` - no animation code needed |
+| `/ic cosmetics` | Toggle blocking of vanilla cosmetic edits (leather dye, cauldron wash, armor trims, banner/firework/shield) on custom ItemsCore items only; all off by default |
+| `/ic dupe` | Duplicate-item detection settings: enable/disable, auto-delete or wipe duped items, scan interval, alert cooldown, ender chest scan. Staff alerts need `itemscore.dupeflags`; `/toggledupealerts` mutes them, `itemscore.avoiddupe` exempts a player |
+| `/addons` | Manage installed ItemsCore addons; `/ic updates` checks for addon updates |
+| `/recipe [search]` | Player recipe book: browse custom-item crafting recipes (available to everyone) |
+| `/equipment [player]` | EquipmentCore addon: open the equipment menu of extra wearable slots (works like armour while equipped); aliases `/eq`, `/equip` |
+| `/ic equipment` | EquipmentCore admin menu (when installed): settings, types, slots, custom items/buttons, and the menu layout editor |
 
 ## When in doubt
 
